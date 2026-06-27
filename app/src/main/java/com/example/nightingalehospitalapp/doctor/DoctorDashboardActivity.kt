@@ -14,6 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.nightingalehospitalapp.activities.ProfileActivity
 import com.example.nightingalehospitalapp.database.FirebaseConfig
+import com.example.nightingalehospitalapp.doctor.ManageSlotsActivity
 import com.example.nightingalehospitalapp.patient.DashboardCard
 import com.example.nightingalehospitalapp.patient.DashboardItem
 import com.example.nightingalehospitalapp.ui.theme.NightingaleHospitalAppTheme
@@ -132,6 +135,11 @@ fun DoctorDashboardScreen() {
                     onClick = openAppointments
                 ),
                 DashboardItem(
+                    title = "Manage Schedule",
+                    icon = Icons.Filled.Edit,
+                    onClick = { context.startActivity(Intent(context, ManageSlotsActivity::class.java)) }
+                ),
+                DashboardItem(
                     title = "View Patients",
                     icon = Icons.Filled.Person,
                     onClick = openPatientHistory
@@ -139,6 +147,10 @@ fun DoctorDashboardScreen() {
                 DashboardItem(
                     title = "Schedule Surgery",
                     icon = Icons.Filled.DateRange
+                ),
+                DashboardItem(
+                    title = "View Test Results",
+                    icon = Icons.Filled.Info
                 )
             )
 

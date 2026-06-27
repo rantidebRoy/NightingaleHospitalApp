@@ -11,10 +11,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class AppointmentViewModel : ViewModel() {
 
     private val repository = AppointmentRepository()
+    private val slotRepository = com.example.nightingalehospitalapp.repository.appointment.SlotRepository()
 
     sealed class UiState {
         object Idle : UiState()
@@ -56,10 +58,22 @@ class AppointmentViewModel : ViewModel() {
         }
         _appointments.value = UiState.Loading
         viewModelScope.launch {
-            repository.observeAppointmentsForPatient(patientId)
+            slotRepository.observeSlotsForPatient(patientId)
                 .catch { e -> _appointments.value = UiState.Error(e.message ?: "Failed to load") }
-                .collectLatest { list ->
-                    _appointments.value = UiState.Loaded(list)
+                .collectLatest { slots ->
+                    val mapped = slots.map { slot ->
+                        Appointment(
+                            appointmentId = slot.slotId,
+                            doctorId = slot.doctorId,
+                            patientId = slot.patientId,
+                            patientName = slot.patientName,
+                            date = slot.date,
+                            time = slot.time,
+                            status = AppointmentStatus.CONFIRMED,
+                            notes = "Booked slot"
+                        )
+                    }
+                    _appointments.value = UiState.Loaded(mapped)
                 }
         }
     }
@@ -71,6 +85,32 @@ class AppointmentViewModel : ViewModel() {
                 onSuccess = { "Status updated to ${newStatus.name}" },
                 onFailure = { it.message ?: "Update failed" }
             )
+        }
+    }
+
+    fun cancelAppointmentFromSlot(slotId: String, patientId: String, doctorId: String, date: String, time: String) {
+        viewModelScope.launch {
+            val slotResult = slotRepository.freeSlot(slotId)
+            if (slotResult.isSuccess) {
+                try {
+                    val snapshot = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                        .collection("appointments")
+                        .whereEqualTo("patientId", patientId)
+                        .whereEqualTo("doctorId", doctorId)
+                        .whereEqualTo("date", date)
+                        .whereEqualTo("time", time)
+                        .get()
+                        .await()
+                    for (doc in snapshot.documents) {
+                        repository.updateStatus(doc.id, AppointmentStatus.CANCELLED)
+                    }
+                    _updateResult.value = "Appointment cancelled"
+                } catch (e: Exception) {
+                    _updateResult.value = "Slot freed, but failed to update appointment status."
+                }
+            } else {
+                _updateResult.value = "Failed to free slot"
+            }
         }
     }
 

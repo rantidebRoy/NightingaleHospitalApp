@@ -114,11 +114,15 @@ fun PatientDashboardScreen() {
             Spacer(modifier = Modifier.height(16.dp))
 
             val dashboardItems = listOf(
-                DashboardItem("Book Appointments", Icons.Filled.DateRange),
+                DashboardItem("Book Appointments", Icons.Filled.DateRange) {
+                    context.startActivity(Intent(context, BookAppointmentActivity::class.java))
+                },
                 DashboardItem("View Prescriptions", Icons.Filled.Info),
                 DashboardItem("Test Results", Icons.Filled.Info),
                 DashboardItem("Medical History", Icons.Filled.Favorite),
-                DashboardItem("Doctor Consultation", Icons.Filled.Person),
+                DashboardItem("My Appointments", Icons.Filled.DateRange) {
+                    context.startActivity(Intent(context, MyAppointmentsActivity::class.java))
+                },
                 DashboardItem("24/7 Support", Icons.Filled.Phone)
             )
 
