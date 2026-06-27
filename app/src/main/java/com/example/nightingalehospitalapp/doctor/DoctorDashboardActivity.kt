@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.nightingalehospitalapp.activities.ProfileActivity
 import com.example.nightingalehospitalapp.database.FirebaseConfig
+import com.example.nightingalehospitalapp.doctor.ManageSlotsActivity
 import com.example.nightingalehospitalapp.patient.DashboardCard
 import com.example.nightingalehospitalapp.patient.DashboardItem
 import com.example.nightingalehospitalapp.ui.theme.NightingaleHospitalAppTheme
@@ -134,8 +135,9 @@ fun DoctorDashboardScreen() {
                     onClick = openAppointments
                 ),
                 DashboardItem(
-                    title = "Write Prescription",
-                    icon = Icons.Filled.Edit
+                    title = "Manage Schedule",
+                    icon = Icons.Filled.Edit,
+                    onClick = { context.startActivity(Intent(context, ManageSlotsActivity::class.java)) }
                 ),
                 DashboardItem(
                     title = "View Patients",

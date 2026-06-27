@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 class AppointmentViewModel : ViewModel() {
 
     private val repository = AppointmentRepository()
+    private val slotRepository = com.example.nightingalehospitalapp.repository.appointment.SlotRepository()
 
     sealed class UiState {
         object Idle : UiState()
@@ -56,10 +57,22 @@ class AppointmentViewModel : ViewModel() {
         }
         _appointments.value = UiState.Loading
         viewModelScope.launch {
-            repository.observeAppointmentsForPatient(patientId)
+            slotRepository.observeSlotsForPatient(patientId)
                 .catch { e -> _appointments.value = UiState.Error(e.message ?: "Failed to load") }
-                .collectLatest { list ->
-                    _appointments.value = UiState.Loaded(list)
+                .collectLatest { slots ->
+                    val mapped = slots.map { slot ->
+                        Appointment(
+                            appointmentId = slot.slotId,
+                            doctorId = slot.doctorId,
+                            patientId = slot.patientId,
+                            patientName = slot.patientName,
+                            date = slot.date,
+                            time = slot.time,
+                            status = AppointmentStatus.CONFIRMED,
+                            notes = "Booked slot"
+                        )
+                    }
+                    _appointments.value = UiState.Loaded(mapped)
                 }
         }
     }
