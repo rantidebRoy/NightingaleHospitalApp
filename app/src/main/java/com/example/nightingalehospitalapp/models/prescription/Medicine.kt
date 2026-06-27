@@ -4,8 +4,7 @@ data class Medicine(
 
     val medicineId: String = "",
     val name: String = "",
-    val description: String = "",
-    val stockQuantity: Int = 0,
-    val price: Double = 0.0
+    val manufacturer: String = "",
+    val stock: Int = 0
 
 )

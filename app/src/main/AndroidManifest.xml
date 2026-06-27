@@ -70,6 +70,12 @@
         <activity
             android:name=".activities.ProfileActivity"
             android:exported="false" />
+        <activity
+            android:name=".patient.ViewMedicineActivity"
+            android:exported="false" />
+        <activity
+            android:name=".patient.ViewPrescriptionsActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

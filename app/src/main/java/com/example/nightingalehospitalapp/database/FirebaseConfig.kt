@@ -23,7 +23,7 @@ object FirebaseConfig {
 
     val prescriptionsRef: CollectionReference = firestore.collection("prescriptions")
 
-    val medicinesRef: CollectionReference = firestore.collection("medicines")
+    val medicinesRef: CollectionReference = firestore.collection("medicine")
 
     val testBookingsRef: CollectionReference = firestore.collection("test_bookings")
 

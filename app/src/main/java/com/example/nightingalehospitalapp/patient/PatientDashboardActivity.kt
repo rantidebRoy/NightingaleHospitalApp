@@ -117,7 +117,12 @@ fun PatientDashboardScreen() {
                 DashboardItem("Book Appointments", Icons.Filled.DateRange) {
                     context.startActivity(Intent(context, BookAppointmentActivity::class.java))
                 },
-                DashboardItem("View Prescriptions", Icons.Filled.Info),
+                DashboardItem("View Prescriptions", Icons.Filled.Info) {
+                    context.startActivity(Intent(context, ViewPrescriptionsActivity::class.java))
+                },
+                DashboardItem("View Medicine", Icons.Filled.Info) {
+                    context.startActivity(Intent(context, ViewMedicineActivity::class.java))
+                },
                 DashboardItem("Test Results", Icons.Filled.Info),
                 DashboardItem("Medical History", Icons.Filled.Favorite),
                 DashboardItem("My Appointments", Icons.Filled.DateRange) {
