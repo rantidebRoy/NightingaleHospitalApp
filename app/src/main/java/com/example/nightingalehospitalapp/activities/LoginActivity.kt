@@ -89,13 +89,19 @@ fun LoginScreen(viewModel: AuthViewModel) {
                         } else {
                             when (role) {
                                 "ADMIN" -> {
-                                    context.startActivity(Intent(context, AdminDashboardActivity::class.java))
+                                    val intent = Intent(context, AdminDashboardActivity::class.java)
+                                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                    context.startActivity(intent)
                                 }
                                 "DOCTOR" -> {
-                                    context.startActivity(Intent(context, DoctorDashboardActivity::class.java))
+                                    val intent = Intent(context, DoctorDashboardActivity::class.java)
+                                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                    context.startActivity(intent)
                                 }
                                 "PATIENT" -> {
-                                    context.startActivity(Intent(context, PatientDashboardActivity::class.java))
+                                    val intent = Intent(context, PatientDashboardActivity::class.java)
+                                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                    context.startActivity(intent)
                                 }
                                 else -> {
                                     Toast.makeText(context, "Invalid role", Toast.LENGTH_LONG).show()

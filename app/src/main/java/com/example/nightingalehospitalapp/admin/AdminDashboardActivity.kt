@@ -5,35 +5,43 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModelProvider
-import com.example.nightingalehospitalapp.activities.MainActivity
+import com.example.nightingalehospitalapp.activities.ProfileActivity
+import com.example.nightingalehospitalapp.database.FirebaseConfig
+import com.example.nightingalehospitalapp.patient.DashboardCard
+import com.example.nightingalehospitalapp.patient.DashboardItem
 import com.example.nightingalehospitalapp.ui.theme.NightingaleHospitalAppTheme
-import com.example.nightingalehospitalapp.viewmodel.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 
 class AdminDashboardActivity : ComponentActivity() {
-    private lateinit var viewModel: AuthViewModel
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             NightingaleHospitalAppTheme {
-                viewModel = ViewModelProvider(this@AdminDashboardActivity).get(AuthViewModel::class.java)
-                AdminDashboardScreen(
-                    onLogout = {
-                        viewModel.logoutUser()
-                        val intent = Intent(this@AdminDashboardActivity, MainActivity::class.java)
-                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        startActivity(intent)
-                        finish()
-                    }
-                )
+                AdminDashboardScreen()
             }
         }
     }
@@ -41,11 +49,46 @@ class AdminDashboardActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminDashboardScreen(onLogout: () -> Unit) {
+fun AdminDashboardScreen() {
+    val context = LocalContext.current
+    var userName by remember { mutableStateOf("Admin") }
+
+    val auth = FirebaseAuth.getInstance()
+    val currentUser = auth.currentUser
+
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
+            FirebaseConfig.usersRef.child(currentUser.uid)
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        if (snapshot.exists()) {
+                            userName = snapshot.child("name").getValue(String::class.java) ?: "Admin"
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        // Handle error
+                    }
+                })
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Admin Dashboard") }
+                title = { Text("Nightingale") },
+                actions = {
+                    IconButton(onClick = {
+                        context.startActivity(Intent(context, ProfileActivity::class.java))
+                    }) {
+                        Icon(Icons.Filled.AccountCircle, contentDescription = "Profile")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
         }
     ) { paddingValues ->
@@ -53,17 +96,46 @@ fun AdminDashboardScreen(onLogout: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(16.dp)
         ) {
             Text(
-                text = "Welcome to Admin Dashboard",
-                style = MaterialTheme.typography.titleLarge
+                text = "Welcome Back",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(onClick = onLogout) {
-                Text("Logout")
+            Text(
+                text = userName,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Text(
+                text = "Admin Portal",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
+            val dashboardItems = listOf(
+                DashboardItem("Manage Doctors", Icons.Filled.Face),
+                DashboardItem("Manage Departments", Icons.Filled.Build),
+                DashboardItem("Manage Beds & Theatres", Icons.Filled.Home),
+                DashboardItem("View Statistics", Icons.Filled.Info),
+                DashboardItem("View Admissions", Icons.Filled.Settings)
+            )
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(dashboardItems) { item ->
+                    DashboardCard(item)
+                }
             }
         }
     }

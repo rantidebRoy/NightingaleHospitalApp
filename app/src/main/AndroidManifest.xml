@@ -40,6 +40,9 @@
         <activity
             android:name=".patient.PatientDashboardActivity"
             android:exported="false" />
+        <activity
+            android:name=".activities.ProfileActivity"
+            android:exported="false" />
     </application>
 
 </manifest>
