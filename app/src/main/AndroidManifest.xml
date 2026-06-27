@@ -47,6 +47,15 @@
             android:name=".doctor.PatientHistoryActivity"
             android:exported="false" />
         <activity
+            android:name=".doctor.PatientDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".doctor.PatientTestResultsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".doctor.WritePrescriptionActivity"
+            android:exported="false" />
+        <activity
             android:name=".patient.PatientDashboardActivity"
             android:exported="false" />
         <activity

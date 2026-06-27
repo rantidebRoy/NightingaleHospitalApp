@@ -48,18 +48,19 @@ class PatientHistoryActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val patientId = intent.getStringExtra(EXTRA_PATIENT_ID) ?: "demo-patient-1"
+val patientId = intent.getStringExtra(EXTRA_PATIENT_ID) ?: "demo-patient-1"
         // For now, history is sourced from the ViewModel's demo record.
         // Once other repositories land, this will query real collections.
         val viewModel = AppointmentViewModel()
         val history = viewModel.demoPatientHistory(patientId)
+        val patientName = intent.getStringExtra(EXTRA_PATIENT_NAME) ?: history.patientName
 
         setContent {
             NightingaleHospitalAppTheme {
                 Scaffold(
                     topBar = {
                         TopAppBar(
-                            title = { Text("Patient History") },
+                            title = { Text("Patient History — $patientName") },
                             navigationIcon = {
                                 IconButton(onClick = { finish() }) {
                                     Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
@@ -86,6 +87,7 @@ class PatientHistoryActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_PATIENT_ID = "extra_patient_id"
+        const val EXTRA_PATIENT_NAME = "extra_patient_name"
     }
 }
 

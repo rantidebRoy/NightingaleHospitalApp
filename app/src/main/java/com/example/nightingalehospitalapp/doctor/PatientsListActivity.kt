@@ -173,8 +173,9 @@ private fun PatientsContent(
                 ) {
                     items(rows, key = { it.patientId }) { row ->
                         PatientRowCard(row = row) {
-                            val intent = Intent(context, PatientHistoryActivity::class.java)
-                                .putExtra(PatientHistoryActivity.EXTRA_PATIENT_ID, row.patientId)
+                            val intent = Intent(context, PatientDetailActivity::class.java)
+                                .putExtra(PatientDetailActivity.EXTRA_PATIENT_ID, row.patientId)
+                                .putExtra(PatientDetailActivity.EXTRA_PATIENT_NAME, row.patientName)
                             context.startActivity(intent)
                         }
                     }
