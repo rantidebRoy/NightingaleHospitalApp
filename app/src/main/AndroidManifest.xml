@@ -50,6 +50,12 @@
             android:name=".patient.PatientDashboardActivity"
             android:exported="false" />
         <activity
+            android:name=".patient.BookAppointmentActivity"
+            android:exported="false" />
+        <activity
+            android:name=".doctor.ManageSlotsActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.ProfileActivity"
             android:exported="false" />
     </application>
