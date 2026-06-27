@@ -135,15 +135,22 @@ fun PatientDashboardScreen() {
     }
 }
 
-data class DashboardItem(val title: String, val icon: ImageVector)
+data class DashboardItem(
+    val title: String,
+    val icon: ImageVector,
+    val onClick: () -> Unit = {}
+)
 
 @Composable
-fun DashboardCard(item: DashboardItem) {
+fun DashboardCard(
+    item: DashboardItem,
+    onClick: () -> Unit = item.onClick
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(120.dp)
-            .clickable { /* Handle click later */ },
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

@@ -113,12 +113,43 @@ fun DoctorDashboardScreen() {
             
             Spacer(modifier = Modifier.height(16.dp))
 
+            val doctorId = currentUser?.uid.orEmpty()
+
+            val openAppointments = {
+                val intent = Intent(context, MyAppointmentsActivity::class.java)
+                    .putExtra(MyAppointmentsActivity.EXTRA_DOCTOR_ID, doctorId)
+                context.startActivity(intent)
+            }
+
+            val openPatientHistory = {
+                val intent = Intent(context, PatientsListActivity::class.java)
+                    .putExtra(PatientsListActivity.EXTRA_DOCTOR_ID, doctorId)
+                context.startActivity(intent)
+            }
+
             val dashboardItems = listOf(
-                DashboardItem("My Appointments", Icons.Filled.DateRange),
-                DashboardItem("Write Prescription", Icons.Filled.Edit),
-                DashboardItem("View Patients", Icons.Filled.Person),
-                DashboardItem("Schedule Surgery", Icons.Filled.DateRange),
-                DashboardItem("View Test Results", Icons.Filled.Info)
+                DashboardItem(
+                    title = "My Appointments",
+                    icon = Icons.Filled.DateRange,
+                    onClick = openAppointments
+                ),
+                DashboardItem(
+                    title = "Write Prescription",
+                    icon = Icons.Filled.Edit
+                ),
+                DashboardItem(
+                    title = "View Patients",
+                    icon = Icons.Filled.Person,
+                    onClick = openPatientHistory
+                ),
+                DashboardItem(
+                    title = "Schedule Surgery",
+                    icon = Icons.Filled.DateRange
+                ),
+                DashboardItem(
+                    title = "View Test Results",
+                    icon = Icons.Filled.Info
+                )
             )
 
             LazyVerticalGrid(

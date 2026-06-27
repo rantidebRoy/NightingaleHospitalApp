@@ -7,6 +7,11 @@ data class Appointment(
     val doctorId: String = "",
     val patientId: String = "",
 
+    // Denormalized patient info for display without an extra fetch.
+    val patientName: String = "",
+    val patientAge: Int = 0,
+    val patientGender: String = "",
+
     val date: String = "",
     val time: String = "",
 

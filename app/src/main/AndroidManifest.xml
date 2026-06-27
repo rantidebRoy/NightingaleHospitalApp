@@ -38,6 +38,15 @@
             android:name=".doctor.DoctorDashboardActivity"
             android:exported="false" />
         <activity
+            android:name=".doctor.MyAppointmentsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".doctor.PatientsListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".doctor.PatientHistoryActivity"
+            android:exported="false" />
+        <activity
             android:name=".patient.PatientDashboardActivity"
             android:exported="false" />
         <activity
