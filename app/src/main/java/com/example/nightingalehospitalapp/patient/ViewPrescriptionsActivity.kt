@@ -219,7 +219,7 @@ fun PrescriptionCard(
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = prescription.diagnosis.ifBlank { "Prescription" },
+                        text = "ID: ${prescription.prescriptionId.ifBlank { "—" }}",
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
                         maxLines = 1,

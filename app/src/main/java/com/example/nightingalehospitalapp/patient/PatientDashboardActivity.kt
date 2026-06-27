@@ -123,12 +123,13 @@ fun PatientDashboardScreen() {
                 DashboardItem("View Medicine", Icons.Filled.Info) {
                     context.startActivity(Intent(context, ViewMedicineActivity::class.java))
                 },
-                DashboardItem("Test Results", Icons.Filled.Info),
+                DashboardItem("Test Results", Icons.Filled.Info) {
+                    context.startActivity(Intent(context, ViewTestResultsActivity::class.java))
+                },
                 DashboardItem("Medical History", Icons.Filled.Favorite),
                 DashboardItem("My Appointments", Icons.Filled.DateRange) {
                     context.startActivity(Intent(context, MyAppointmentsActivity::class.java))
-                },
-                DashboardItem("24/7 Support", Icons.Filled.Phone)
+                }
             )
 
             LazyVerticalGrid(

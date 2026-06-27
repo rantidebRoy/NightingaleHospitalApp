@@ -71,6 +71,9 @@
             android:name=".activities.ProfileActivity"
             android:exported="false" />
         <activity
+            android:name=".patient.ViewTestResultsActivity"
+            android:exported="false" />
+        <activity
             android:name=".patient.ViewMedicineActivity"
             android:exported="false" />
         <activity
