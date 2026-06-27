@@ -34,5 +34,7 @@ object FirebaseConfig {
     val notificationsRef: CollectionReference = firestore.collection("notifications")
 
     val admissionsRef: CollectionReference = firestore.collection("admissions")
+    
+    val diagnosticTestsRef: CollectionReference = firestore.collection("diagnostic_tests")
 
 }

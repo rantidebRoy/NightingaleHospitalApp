@@ -35,6 +35,15 @@
             android:name=".admin.AdminDashboardActivity"
             android:exported="false" />
         <activity
+            android:name=".admin.resources.ManageResourcesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.doctors.ManageDoctorsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.reports.SystemReportsActivity"
+            android:exported="false" />
+        <activity
             android:name=".doctor.DoctorDashboardActivity"
             android:exported="false" />
         <activity
@@ -78,6 +87,24 @@
             android:exported="false" />
         <activity
             android:name=".patient.ViewPrescriptionsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.admissions.ManageAdmissionsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.admissions.CreateAdmissionActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.surgery.ManageSurgeriesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.surgery.ScheduleSurgeryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.diagnostic.ManageTestBookingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.diagnostic.BookTestActivity"
             android:exported="false" />
     </application>
 

@@ -115,11 +115,24 @@ fun AdminDashboardScreen() {
             Spacer(modifier = Modifier.height(16.dp))
 
             val dashboardItems = listOf(
-                DashboardItem("Manage Doctors", Icons.Filled.Face),
-                DashboardItem("Manage Departments", Icons.Filled.Build),
-                DashboardItem("Manage Beds & Theatres", Icons.Filled.Home),
-                DashboardItem("View Statistics", Icons.Filled.Info),
-                DashboardItem("View Admissions", Icons.Filled.Settings)
+                DashboardItem("Manage Resources", Icons.Filled.Home) {
+                    context.startActivity(Intent(context, com.example.nightingalehospitalapp.admin.resources.ManageResourcesActivity::class.java))
+                },
+                DashboardItem("Manage Doctors", Icons.Filled.Face) {
+                    context.startActivity(Intent(context, com.example.nightingalehospitalapp.admin.doctors.ManageDoctorsActivity::class.java))
+                },
+                DashboardItem("Manage Admissions", Icons.Filled.Build) {
+                    context.startActivity(Intent(context, com.example.nightingalehospitalapp.admin.admissions.ManageAdmissionsActivity::class.java))
+                },
+                DashboardItem("Manage Surgeries", Icons.Filled.Settings) {
+                    context.startActivity(Intent(context, com.example.nightingalehospitalapp.admin.surgery.ManageSurgeriesActivity::class.java))
+                },
+                DashboardItem("Diagnostic Tests", Icons.Filled.Info) {
+                    context.startActivity(Intent(context, com.example.nightingalehospitalapp.admin.diagnostic.ManageTestBookingsActivity::class.java))
+                },
+                DashboardItem("System Reports", Icons.Filled.Info) {
+                    context.startActivity(Intent(context, com.example.nightingalehospitalapp.admin.reports.SystemReportsActivity::class.java))
+                }
             )
 
             LazyVerticalGrid(
