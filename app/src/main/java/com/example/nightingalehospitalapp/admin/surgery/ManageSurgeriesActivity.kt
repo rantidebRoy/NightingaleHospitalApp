@@ -24,17 +24,39 @@ import com.example.nightingalehospitalapp.ui.theme.NightingaleHospitalAppTheme
 import com.example.nightingalehospitalapp.viewmodel.admin.surgery.ManageSurgeriesViewModel
 import com.example.nightingalehospitalapp.viewmodel.admin.surgery.SurgeryBookingItem
 
+/**
+ * Lists surgery bookings.
+ *
+ * • Default (admin) call — no extras — shows every booking in the system
+ *   and exposes the per-card status dropdown so admins can move surgeries
+ *   through BOOKED / COMPLETED / CANCELLED.
+ *
+ * • `EXTRA_DOCTOR_ID` set — list is filtered to that doctor's surgeries
+ *   and the status dropdown is hidden (read-only view for the doctor).
+ */
 class ManageSurgeriesActivity : ComponentActivity() {
+
+    companion object {
+        const val EXTRA_DOCTOR_ID = "extra_doctor_id"
+    }
 
     private val viewModel: ManageSurgeriesViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
+        // If launched by a doctor, bind the VM to that doctor's scope once.
+        intent?.getStringExtra(EXTRA_DOCTOR_ID)?.let { doctorId ->
+            if (doctorId.isNotBlank()) viewModel.bindDoctor(doctorId)
+        }
+
+        val isDoctorScope = viewModel.isDoctorScope.value
+
         setContent {
             NightingaleHospitalAppTheme {
                 ManageSurgeriesScreen(
                     viewModel = viewModel,
+                    isDoctorScope = isDoctorScope,
                     onNavigateBack = { finish() },
                     onNavigateToSchedule = {
                         startActivity(Intent(this, ScheduleSurgeryActivity::class.java))
@@ -54,6 +76,7 @@ class ManageSurgeriesActivity : ComponentActivity() {
 @Composable
 fun ManageSurgeriesScreen(
     viewModel: ManageSurgeriesViewModel,
+    isDoctorScope: Boolean,
     onNavigateBack: () -> Unit,
     onNavigateToSchedule: () -> Unit
 ) {
@@ -71,7 +94,11 @@ fun ManageSurgeriesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Manage Surgeries") },
+                title = {
+                    Text(
+                        if (isDoctorScope) "My Surgeries" else "Manage Surgeries"
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
@@ -84,9 +111,12 @@ fun ManageSurgeriesScreen(
                 )
             )
         },
+        // Admins get a FAB to schedule new surgeries; doctors do not.
         floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToSchedule) {
-                Icon(Icons.Filled.Add, contentDescription = "Schedule Surgery")
+            if (!isDoctorScope) {
+                FloatingActionButton(onClick = onNavigateToSchedule) {
+                    Icon(Icons.Filled.Add, contentDescription = "Schedule Surgery")
+                }
             }
         }
     ) { paddingValues ->
@@ -100,7 +130,11 @@ fun ManageSurgeriesScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else if (surgeries.isEmpty()) {
                 Text(
-                    text = "No surgeries scheduled.",
+                    text = if (isDoctorScope) {
+                        "No surgeries have been assigned to you yet."
+                    } else {
+                        "No surgeries scheduled."
+                    },
                     modifier = Modifier.align(Alignment.Center),
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -111,12 +145,23 @@ fun ManageSurgeriesScreen(
                     items(surgeries) { surgery ->
                         SurgeryCard(
                             surgery = surgery,
+                            showStatusEditor = !isDoctorScope,
                             onStatusChange = { newStatus ->
-                                viewModel.updateSurgeryStatus(surgery.surgeryId, newStatus, surgery.otId) { success, msg ->
+                                viewModel.updateSurgeryStatus(
+                                    surgery.surgeryId, newStatus, surgery.otId
+                                ) { success, msg ->
                                     if (success) {
-                                        Toast.makeText(context, "Status Updated", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(
+                                            context,
+                                            "Status Updated",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     } else {
-                                        Toast.makeText(context, "Error: $msg", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(
+                                            context,
+                                            "Error: $msg",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
                                 }
                             }
@@ -132,10 +177,10 @@ fun ManageSurgeriesScreen(
 @Composable
 fun SurgeryCard(
     surgery: SurgeryBookingItem,
+    showStatusEditor: Boolean,
     onStatusChange: (SurgeryStatus) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -145,40 +190,55 @@ fun SurgeryCard(
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            Text(text = surgery.surgeryType, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(
+                text = surgery.surgeryType,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Patient: ${surgery.patientName}")
             Text(text = "Doctor: ${surgery.doctorName}")
             Text(text = "OT Room: ${surgery.otRoom}")
             Text(text = "Date: ${surgery.date} (${surgery.startTime} - ${surgery.endTime})")
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Status Dropdown
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
-            ) {
-                OutlinedTextField(
-                    value = surgery.status.name,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Status") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor()
-                )
-                ExposedDropdownMenu(
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Read-only status badge (shown to doctors).
+            AssistChip(
+                onClick = {},
+                label = { Text(surgery.status.name) }
+            )
+
+            if (showStatusEditor) {
+                Spacer(modifier = Modifier.height(16.dp))
+                ExposedDropdownMenuBox(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onExpandedChange = { expanded = !expanded }
                 ) {
-                    SurgeryStatus.values().forEach { statusOption ->
-                        DropdownMenuItem(
-                            text = { Text(statusOption.name) },
-                            onClick = {
-                                onStatusChange(statusOption)
-                                expanded = false
-                            }
-                        )
+                    OutlinedTextField(
+                        value = surgery.status.name,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Update Status") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        SurgeryStatus.values().forEach { statusOption ->
+                            DropdownMenuItem(
+                                text = { Text(statusOption.name) },
+                                onClick = {
+                                    onStatusChange(statusOption)
+                                    expanded = false
+                                }
+                            )
+                        }
                     }
                 }
             }

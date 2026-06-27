@@ -33,6 +33,13 @@ class ScheduleSurgeryViewModel : ViewModel() {
         loadFormData()
     }
 
+    /**
+     * Re-fetch patients/doctors/OTs from Firestore. Call from `onResume` so any
+     * entries that were added (or whose `approved` flag flipped) while the
+     * screen sat in the back stack are reflected.
+     */
+    fun refresh() = loadFormData()
+
     private fun loadFormData() {
         _isLoading.value = true
         

@@ -9,6 +9,7 @@ import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
 
 class SurgeryRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -80,6 +81,49 @@ class SurgeryRepository(
             }
     }
 
+    /**
+     * Coroutine variant of [getAllSurgeries] — throws on failure so callers can
+     * wrap it in try/catch and run follow-up work in a single scope.
+     */
+    suspend fun getAllSurgeriesAsync(): List<SurgeryBooking> {
+        val snap = FirebaseConfig.surgeryBookingsRef.get().await()
+        return snap.documents.mapNotNull { it.toObject(SurgeryBooking::class.java) }
+    }
+
+    /**
+     * Returns only the surgeries assigned to the given doctor (matched on
+     * `doctorId`). Empty string returns an empty list rather than scanning the
+     * whole collection.
+     */
+    fun getAllSurgeriesForDoctor(
+        doctorId: String,
+        onResult: (List<SurgeryBooking>?, String?) -> Unit
+    ) {
+        if (doctorId.isBlank()) {
+            onResult(emptyList(), null)
+            return
+        }
+        FirebaseConfig.surgeryBookingsRef
+            .whereEqualTo("doctorId", doctorId)
+            .get()
+            .addOnSuccessListener { documents ->
+                val surgeries = documents.mapNotNull { it.toObject(SurgeryBooking::class.java) }
+                onResult(surgeries, null)
+            }
+            .addOnFailureListener {
+                onResult(null, it.message)
+            }
+    }
+
+    suspend fun getAllSurgeriesForDoctorAsync(doctorId: String): List<SurgeryBooking> {
+        if (doctorId.isBlank()) return emptyList()
+        val snap = FirebaseConfig.surgeryBookingsRef
+            .whereEqualTo("doctorId", doctorId)
+            .get()
+            .await()
+        return snap.documents.mapNotNull { it.toObject(SurgeryBooking::class.java) }
+    }
+
     fun updateSurgeryStatus(surgeryId: String, status: SurgeryStatus, onResult: (Boolean, String?) -> Unit) {
         FirebaseConfig.surgeryBookingsRef
             .document(surgeryId)
@@ -93,8 +137,29 @@ class SurgeryRepository(
     }
 
     fun getAvailableOperationTheatres(onResult: (List<OperationTheatre>?, String?) -> Unit) {
+        // First try the strict filter — only OTs explicitly marked AVAILABLE.
         FirebaseConfig.operationTheatresRef
             .whereEqualTo("status", "AVAILABLE")
+            .get()
+            .addOnSuccessListener { documents ->
+                val ots = documents.mapNotNull { it.toObject(OperationTheatre::class.java) }
+                if (ots.isNotEmpty()) {
+                    onResult(ots, null)
+                } else {
+                    // Fallback: some OTs may have been seeded without a `status`
+                    // field (or the field is blank/null). Pull every OT and let the
+                    // UI decide — this prevents an empty dropdown when the seed
+                    // data is incomplete.
+                    fetchAllOperationTheatres(onResult)
+                }
+            }
+            .addOnFailureListener {
+                onResult(null, it.message)
+            }
+    }
+
+    private fun fetchAllOperationTheatres(onResult: (List<OperationTheatre>?, String?) -> Unit) {
+        FirebaseConfig.operationTheatresRef
             .get()
             .addOnSuccessListener { documents ->
                 val ots = documents.mapNotNull { it.toObject(OperationTheatre::class.java) }

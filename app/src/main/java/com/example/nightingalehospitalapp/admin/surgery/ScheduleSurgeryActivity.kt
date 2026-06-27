@@ -19,12 +19,10 @@ import com.example.nightingalehospitalapp.ui.theme.NightingaleHospitalAppTheme
 import com.example.nightingalehospitalapp.viewmodel.admin.surgery.ScheduleSurgeryViewModel
 
 class ScheduleSurgeryActivity : ComponentActivity() {
-
     private val viewModel: ScheduleSurgeryViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
         setContent {
             NightingaleHospitalAppTheme {
                 ScheduleSurgeryScreen(
@@ -37,6 +35,14 @@ class ScheduleSurgeryActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh patients/doctors/OTs so newly-added entries (e.g. an admin
+        // creating a doctor or OT while this screen sat in the back stack)
+        // are reflected when we return.
+        viewModel.refresh()
     }
 }
 

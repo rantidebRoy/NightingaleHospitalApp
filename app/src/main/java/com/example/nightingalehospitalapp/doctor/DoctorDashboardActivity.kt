@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.nightingalehospitalapp.activities.ProfileActivity
+import com.example.nightingalehospitalapp.admin.surgery.ManageSurgeriesActivity
 import com.example.nightingalehospitalapp.database.FirebaseConfig
 import com.example.nightingalehospitalapp.doctor.ManageSlotsActivity
 import com.example.nightingalehospitalapp.patient.DashboardCard
@@ -127,6 +128,14 @@ fun DoctorDashboardScreen() {
                 context.startActivity(intent)
             }
 
+            // Doctors only see surgeries assigned to them — pass doctorId
+            // through so ManageSurgeriesActivity scopes its query.
+            val openMySurgeries = {
+                val intent = Intent(context, ManageSurgeriesActivity::class.java)
+                    .putExtra(ManageSurgeriesActivity.EXTRA_DOCTOR_ID, doctorId)
+                context.startActivity(intent)
+            }
+
             val dashboardItems = listOf(
                 DashboardItem(
                     title = "My Appointments",
@@ -144,8 +153,9 @@ fun DoctorDashboardScreen() {
                     onClick = openPatientHistory
                 ),
                 DashboardItem(
-                    title = "Schedule Surgery",
-                    icon = Icons.Filled.DateRange
+                    title = "My Surgeries",
+                    icon = Icons.Filled.DateRange,
+                    onClick = openMySurgeries
                 )
             )
 
