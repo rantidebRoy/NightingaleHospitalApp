@@ -1,7 +1,10 @@
 {
   "project_info": {
     "project_number": "963622897103",
+<<<<<<< HEAD
     "firebase_url": "https://nightingalehospitalapp-68ce2-default-rtdb.firebaseio.com",
+=======
+>>>>>>> df99f02feeda054466fba753a444db34ab978dbb
     "project_id": "nightingalehospitalapp-68ce2",
     "storage_bucket": "nightingalehospitalapp-68ce2.firebasestorage.app"
   },

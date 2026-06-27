@@ -23,4 +23,12 @@ class AuthViewModel : ViewModel() {
     ) {
         repository.loginUser(email, password, callback)
     }
+
+    fun checkSession(callback: (String?, String?) -> Unit) {
+        repository.checkSession(callback)
+    }
+
+    fun logoutUser() {
+        repository.logoutUser()
+    }
 }

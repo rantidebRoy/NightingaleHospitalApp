@@ -102,4 +102,46 @@ class AuthRepository {
 
             }
     }
+
+    /* ------------------ SESSION CHECK ------------------ */
+
+    fun checkSession(onResult: (String?, String?) -> Unit) {
+        val uid = auth.currentUser?.uid
+        if (uid == null) {
+            onResult(null, null)
+            return
+        }
+
+        FirebaseConfig.usersRef.child(uid)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!snapshot.exists()) {
+                        auth.signOut()
+                        onResult(null, "User profile not found")
+                        return
+                    }
+
+                    val role = snapshot.child("role").getValue(String::class.java)
+                    val approved = snapshot.child("approved").getValue(Boolean::class.java)
+
+                    if (role == "DOCTOR" && approved == false) {
+                        auth.signOut()
+                        onResult(null, "Doctor not approved yet")
+                        return
+                    }
+
+                    onResult(role, null)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    onResult(null, error.message)
+                }
+            })
+    }
+
+    /* ------------------ LOGOUT ------------------ */
+
+    fun logoutUser() {
+        auth.signOut()
+    }
 }
