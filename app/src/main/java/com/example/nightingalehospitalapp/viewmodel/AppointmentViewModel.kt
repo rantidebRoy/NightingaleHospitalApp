@@ -45,7 +45,8 @@ class AppointmentViewModel : ViewModel() {
             repository.observeAppointmentsForDoctor(doctorId)
                 .catch { e -> _appointments.value = UiState.Error(e.message ?: "Failed to load") }
                 .collectLatest { list ->
-                    val enrichedList = list.map { appt ->
+                    val activeList = list.filter { it.status != AppointmentStatus.CANCELLED }
+                    val enrichedList = activeList.map { appt ->
                         var updated = appt
                         if (appt.patientId.isNotBlank()) {
                             try {

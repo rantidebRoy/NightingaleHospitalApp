@@ -140,9 +140,6 @@ fun PatientDashboardScreen() {
                         }
                         context.startActivity(intent)
                     }
-                },
-                DashboardItem("My Appointments", Icons.Filled.DateRange) {
-                    context.startActivity(Intent(context, MyAppointmentsActivity::class.java))
                 }
             )
 

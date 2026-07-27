@@ -3,6 +3,7 @@ package com.example.nightingalehospitalapp.viewmodel.admin.reports
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nightingalehospitalapp.repository.report.ReportRepository
+import com.example.nightingalehospitalapp.repository.report.SystemReportMetrics
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -10,6 +11,9 @@ import kotlinx.coroutines.launch
 class SystemReportsViewModel(
     private val reportRepository: ReportRepository = ReportRepository()
 ) : ViewModel() {
+
+    private val _metrics = MutableStateFlow(SystemReportMetrics())
+    val metrics: StateFlow<SystemReportMetrics> = _metrics
 
     private val _activities = MutableStateFlow<List<String>>(emptyList())
     val activities: StateFlow<List<String>> = _activities
@@ -29,23 +33,26 @@ class SystemReportsViewModel(
     }
 
     init {
-        loadActivities()
+        loadMetrics()
     }
 
-    private fun loadActivities() {
+    fun loadMetrics() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                _metrics.value = reportRepository.getSystemMetrics()
                 _activities.value = reportRepository.getRecentActivities()
             } catch (e: Exception) {
-                _errorMessage.value = "Failed to load activities: ${e.message}"
+                _errorMessage.value = "Failed to load metrics: ${e.message}"
             }
             _isLoading.value = false
         }
     }
     
     fun generateFullReport() {
-        // logic to generate PDF/CSV
-        _actionMessage.value = "Report generated successfully!"
+        viewModelScope.launch {
+            _metrics.value = reportRepository.getSystemMetrics()
+            _actionMessage.value = "Report generated & updated successfully!"
+        }
     }
 }

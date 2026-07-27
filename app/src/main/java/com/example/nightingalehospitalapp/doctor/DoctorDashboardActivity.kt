@@ -145,11 +145,6 @@ fun DoctorDashboardScreen() {
 
             val dashboardItems = listOf(
                 DashboardItem(
-                    title = "My Appointments",
-                    icon = Icons.Filled.DateRange,
-                    onClick = openAppointments
-                ),
-                DashboardItem(
                     title = "Manage Schedule",
                     icon = Icons.Filled.Edit,
                     onClick = { context.startActivity(Intent(context, ManageSlotsActivity::class.java)) }
