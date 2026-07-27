@@ -22,21 +22,21 @@ class DoctorRepository {
 
     suspend fun getDoctorsWithDetails(): List<DoctorWithUser> {
         return try {
-            // First, get all users with role == "DOCTOR"
-            val usersSnap = FirebaseConfig.usersRef.whereEqualTo("role", "DOCTOR").get().await()
+            // First, get all users with role == "DOCTOR" and approved == true
+            val usersSnap = FirebaseConfig.usersRef.whereEqualTo("role", "DOCTOR").whereEqualTo("approved", true).get().await()
             val doctorUsers = usersSnap.documents.mapNotNull { doc ->
                 doc.toObject(User::class.java)?.copy(userId = doc.id)
             }
 
             // Then, fetch all doctors from the doctors collection to match them
-            val doctorsSnap = FirebaseConfig.doctorsRef.get().await()
+            val doctorsSnap = FirebaseConfig.doctorsRef.whereEqualTo("isApproved", true).get().await()
             val doctorProfiles = doctorsSnap.documents.mapNotNull { it.toObject(Doctor::class.java) }
 
             val result = mutableListOf<DoctorWithUser>()
             for (user in doctorUsers) {
                 // Find matching profile or create a default one
                 val profile = doctorProfiles.find { it.userId == user.userId }
-                    ?: Doctor(doctorId = user.userId, userId = user.userId, specialization = "General", displayId = user.displayId)
+                    ?: Doctor(doctorId = user.userId, userId = user.userId, specialization = "General", displayId = user.displayId, isApproved = true)
 
                 result.add(DoctorWithUser(profile, user))
             }
