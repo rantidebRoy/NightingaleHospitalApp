@@ -23,11 +23,10 @@ fun NightingaleEmptyState(
     title: String,
     message: String,
     icon: ImageVector,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier.fillMaxSize()
 ) {
     Column(
         modifier = modifier
-            .fillMaxWidth()
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center

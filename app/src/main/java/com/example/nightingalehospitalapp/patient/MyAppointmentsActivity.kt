@@ -97,13 +97,39 @@ fun MyAppointmentsScreen(viewModel: AppointmentViewModel, doctorId: String?, onB
                                         .fillMaxWidth()
                                         .padding(vertical = 8.dp)
                                 ) {
-                                    Column(modifier = Modifier.fillMaxWidth()) {
-                                        Text("Date: ${appointment.date} at ${appointment.time}", fontWeight = FontWeight.Bold)
-                                        Text("Status: ${appointment.status.name}", color = MaterialTheme.colorScheme.primary)
-                                        if (appointment.notes.isNotEmpty()) {
-                                            Text("Notes: ${appointment.notes}")
+                                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                                        Text(
+                                            text = if (appointment.doctorName.isNotBlank()) "Doctor: ${appointment.doctorName}" else "Doctor ID: ${appointment.doctorId}",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        if (appointment.doctorDisplayId.isNotBlank()) {
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                text = "Doctor ID: ${appointment.doctorDisplayId}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.secondary
+                                            )
                                         }
+                                        if (appointment.doctorSpecialization.isNotBlank() || appointment.doctorDepartment.isNotBlank()) {
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            val deptInfo = listOf(appointment.doctorSpecialization, appointment.doctorDepartment).filter { it.isNotBlank() }.joinToString(" • ")
+                                            Text(
+                                                text = deptInfo,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.secondary
+                                            )
+                                        }
+
                                         Spacer(modifier = Modifier.height(8.dp))
+                                        Text("Date: ${appointment.date} at ${appointment.time}", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text("Status: ${appointment.status.name}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                                        if (appointment.notes.isNotEmpty()) {
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text("Notes: ${appointment.notes}", style = MaterialTheme.typography.bodySmall)
+                                        }
+                                        Spacer(modifier = Modifier.height(12.dp))
                                         if (appointment.status != com.example.nightingalehospitalapp.models.enums.AppointmentStatus.CANCELLED && appointment.status != com.example.nightingalehospitalapp.models.enums.AppointmentStatus.COMPLETED) {
                                             Button(
                                                 onClick = {

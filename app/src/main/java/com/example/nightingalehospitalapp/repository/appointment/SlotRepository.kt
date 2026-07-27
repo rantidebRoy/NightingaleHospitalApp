@@ -81,6 +81,31 @@ class SlotRepository(
         }
     }
 
+    suspend fun deleteBookedSlot(slot: Slot): Result<Unit> {
+        return try {
+            // 1. Delete slot document
+            db.collection("slots").document(slot.slotId).delete().await()
+
+            // 2. Cascade cancel any corresponding appointment in appointments collection
+            if (slot.patientId.isNotBlank()) {
+                val apptQuery = db.collection("appointments")
+                    .whereEqualTo("doctorId", slot.doctorId)
+                    .whereEqualTo("patientId", slot.patientId)
+                    .whereEqualTo("date", slot.date)
+                    .whereEqualTo("time", slot.time)
+                    .get()
+                    .await()
+
+                for (doc in apptQuery.documents) {
+                    db.collection("appointments").document(doc.id).update("status", "CANCELLED").await()
+                }
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun markSlotAsBooked(slotId: String, patientId: String, patientName: String): Result<Unit> {
         return try {
             db.collection("slots")

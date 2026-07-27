@@ -65,7 +65,6 @@ fun WritePrescriptionScreen(
 ) {
     val context = LocalContext.current
     var diagnosis by rememberSaveable { mutableStateOf("") }
-    var appointmentId by rememberSaveable { mutableStateOf("") }
     var date by rememberSaveable { mutableStateOf(todayString()) }
     var saving by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -94,23 +93,16 @@ fun WritePrescriptionScreen(
             )
 
             NightingaleTextField(
-                value = appointmentId,
-                onValueChange = { appointmentId = it },
-                label = "Appointment ID (optional)",
+                value = date,
+                onValueChange = { date = it },
+                label = "Date (YYYY-MM-DD)",
                 modifier = Modifier.fillMaxWidth()
             )
 
             NightingaleTextField(
                 value = diagnosis,
                 onValueChange = { diagnosis = it },
-                label = "Diagnosis / Notes",
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            NightingaleTextField(
-                value = date,
-                onValueChange = { date = it },
-                label = "Date (YYYY-MM-DD)",
+                label = "Notes / Diagnosis",
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -123,13 +115,13 @@ fun WritePrescriptionScreen(
                         return@NightingalePrimaryButton
                     }
                     if (diagnosis.isBlank()) {
-                        coroutineScope.launch { snackbarHostState.showSnackbar("Diagnosis is required") }
+                        coroutineScope.launch { snackbarHostState.showSnackbar("Notes / Diagnosis is required") }
                         return@NightingalePrimaryButton
                     }
                     saving = true
                     val prescription = Prescription(
                         prescriptionId = "",
-                        appointmentId = appointmentId.trim(),
+                        appointmentId = "",
                         doctorId = doctorId,
                         patientId = patientId,
                         diagnosis = diagnosis.trim(),

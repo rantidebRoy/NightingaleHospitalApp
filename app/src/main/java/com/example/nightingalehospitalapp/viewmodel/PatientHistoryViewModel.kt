@@ -104,8 +104,16 @@ class PatientHistoryViewModel(
                 diagnosis = p.diagnosis,
                 medicines = medicines.map {
                     "${it.medicineId} • ${it.dosage} • ${it.duration} • ${it.instructions}"
-                }
+                },
+                isRedacted = p.isRedacted,
+                redactionReason = p.redactionReason
             )
+        }
+    }
+
+    fun redactPrescription(prescriptionId: String, reason: String) {
+        viewModelScope.launch {
+            prescriptionRepo.redactPrescription(prescriptionId, reason)
         }
     }
 
@@ -170,7 +178,9 @@ sealed class HistoryItem {
         val doctorName: String,
         val date: String,
         val diagnosis: String,
-        val medicines: List<String>
+        val medicines: List<String>,
+        val isRedacted: Boolean = false,
+        val redactionReason: String = ""
     ) : HistoryItem()
 
     data class TestBookingRow(

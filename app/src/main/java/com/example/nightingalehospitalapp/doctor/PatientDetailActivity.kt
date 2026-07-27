@@ -89,6 +89,7 @@ fun PatientDetailScreen(patientId: String, patientName: String) {
                         val intent = Intent(context, PatientHistoryActivity::class.java).apply {
                             putExtra(PatientHistoryActivity.EXTRA_PATIENT_ID, patientId)
                             putExtra(PatientHistoryActivity.EXTRA_PATIENT_NAME, patientName)
+                            putExtra(PatientHistoryActivity.EXTRA_CAN_REDACT, true)
                         }
                         context.startActivity(intent)
                     }

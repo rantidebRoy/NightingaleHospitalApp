@@ -41,12 +41,35 @@ class AppointmentViewModel : ViewModel() {
         }
         _appointments.value = UiState.Loading
         viewModelScope.launch {
-            // Seed demo data only on the first call (idempotent in repo).
             repository.seedDemoDataIfEmpty(doctorId)
             repository.observeAppointmentsForDoctor(doctorId)
                 .catch { e -> _appointments.value = UiState.Error(e.message ?: "Failed to load") }
                 .collectLatest { list ->
-                    _appointments.value = UiState.Loaded(list)
+                    val enrichedList = list.map { appt ->
+                        var updated = appt
+                        if (appt.patientId.isNotBlank()) {
+                            try {
+                                val patientDoc = com.example.nightingalehospitalapp.database.FirebaseConfig.patientsRef
+                                    .document(appt.patientId).get().await()
+
+                                val userDoc = com.example.nightingalehospitalapp.database.FirebaseConfig.usersRef
+                                    .document(appt.patientId).get().await()
+
+                                val patientObj = if (patientDoc.exists()) patientDoc.toObject(com.example.nightingalehospitalapp.models.user.Patient::class.java) else null
+                                val realName = userDoc.getString("name")
+
+                                updated = updated.copy(
+                                    patientName = if (!realName.isNullOrBlank()) realName else appt.patientName,
+                                    patientAge = if ((patientObj?.age ?: 0) > 0) patientObj!!.age else appt.patientAge,
+                                    patientGender = if (!patientObj?.gender.isNullOrBlank()) patientObj!!.gender else appt.patientGender
+                                )
+                            } catch (_: Exception) {
+                                // Keep original if fetch fails
+                            }
+                        }
+                        updated
+                    }
+                    _appointments.value = UiState.Loaded(enrichedList)
                 }
         }
     }
@@ -58,22 +81,45 @@ class AppointmentViewModel : ViewModel() {
         }
         _appointments.value = UiState.Loading
         viewModelScope.launch {
-            slotRepository.observeSlotsForPatient(patientId)
+            repository.observeAppointmentsForPatient(patientId)
                 .catch { e -> _appointments.value = UiState.Error(e.message ?: "Failed to load") }
-                .collectLatest { slots ->
-                    val mapped = slots.map { slot ->
-                        Appointment(
-                            appointmentId = slot.slotId,
-                            doctorId = slot.doctorId,
-                            patientId = slot.patientId,
-                            patientName = slot.patientName,
-                            date = slot.date,
-                            time = slot.time,
-                            status = AppointmentStatus.CONFIRMED,
-                            notes = "Booked slot"
-                        )
+                .collectLatest { list ->
+                    val enrichedList = list.map { appt ->
+                        var updated = appt
+                        if (appt.doctorId.isNotBlank()) {
+                            try {
+                                val doctorDoc = com.example.nightingalehospitalapp.database.FirebaseConfig.doctorsRef
+                                    .document(appt.doctorId).get().await()
+
+                                val userDoc = com.example.nightingalehospitalapp.database.FirebaseConfig.usersRef
+                                    .document(appt.doctorId).get().await()
+
+                                val doctorObj = if (doctorDoc.exists()) doctorDoc.toObject(com.example.nightingalehospitalapp.models.user.Doctor::class.java) else null
+                                val realDoctorName = userDoc.getString("name") ?: doctorObj?.name ?: ""
+                                val docDisplayId = userDoc.getString("displayId") ?: doctorObj?.displayId ?: ""
+
+                                var deptName = ""
+                                if (!doctorObj?.departmentId.isNullOrBlank()) {
+                                    try {
+                                        val deptDoc = com.example.nightingalehospitalapp.database.FirebaseConfig.departmentsRef
+                                            .document(doctorObj!!.departmentId).get().await()
+                                        deptName = deptDoc.getString("name") ?: ""
+                                    } catch (_: Exception) {}
+                                }
+
+                                updated = updated.copy(
+                                    doctorName = if (realDoctorName.isNotBlank()) realDoctorName else appt.doctorName,
+                                    doctorDisplayId = docDisplayId,
+                                    doctorSpecialization = doctorObj?.specialization ?: "",
+                                    doctorDepartment = deptName
+                                )
+                            } catch (_: Exception) {
+                                // Keep original if fetch fails
+                            }
+                        }
+                        updated
                     }
-                    _appointments.value = UiState.Loaded(mapped)
+                    _appointments.value = UiState.Loaded(enrichedList)
                 }
         }
     }

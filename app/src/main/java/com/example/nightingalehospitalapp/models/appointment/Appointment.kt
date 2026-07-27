@@ -12,10 +12,15 @@ data class Appointment(
     val patientAge: Int = 0,
     val patientGender: String = "",
 
+    // Doctor info for display without an extra fetch.
+    val doctorName: String = "",
+    val doctorDisplayId: String = "",
+    val doctorSpecialization: String = "",
+    val doctorDepartment: String = "",
+
     val date: String = "",
     val time: String = "",
 
     val status: AppointmentStatus = AppointmentStatus.PENDING,
     val notes: String = ""
-
 )

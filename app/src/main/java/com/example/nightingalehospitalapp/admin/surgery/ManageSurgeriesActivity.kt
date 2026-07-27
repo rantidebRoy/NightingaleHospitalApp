@@ -207,7 +207,7 @@ fun SurgeryCard(
             Text(text = "Patient: ${surgery.patientName}")
             Text(text = "Doctor: ${surgery.doctorName}")
             Text(text = "OT Room: ${surgery.otRoom}")
-            Text(text = "Date: ${surgery.date} (${surgery.startTime} - ${surgery.endTime})")
+            Text(text = if (surgery.startTime.isNotBlank()) "Date: ${surgery.date} (${surgery.startTime})" else "Date: ${surgery.date}")
             Spacer(modifier = Modifier.height(8.dp))
 
             // Surgeries persist in the scheduled list regardless of status —
@@ -236,7 +236,7 @@ fun SurgeryCard(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
                     ) {
-                        SurgeryStatus.values().forEach { statusOption ->
+                        SurgeryStatus.values().filter { it != SurgeryStatus.AVAILABLE }.forEach { statusOption ->
                             DropdownMenuItem(
                                 text = { Text(statusOption.name) },
                                 onClick = {

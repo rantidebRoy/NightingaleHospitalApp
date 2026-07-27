@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -14,9 +15,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.nightingalehospitalapp.ui.theme.NightingaleHospitalAppTheme
 import com.example.nightingalehospitalapp.viewmodel.admin.surgery.ScheduleSurgeryViewModel
+import java.util.Calendar
 
 class ScheduleSurgeryActivity : ComponentActivity() {
     private val viewModel: ScheduleSurgeryViewModel by viewModels()
@@ -75,9 +78,18 @@ fun ScheduleSurgeryScreen(
     val filteredOts = operationTheatres.filter { it.roomNumber.contains(otSearchQuery, ignoreCase = true) || it.otId.contains(otSearchQuery, ignoreCase = true) }
 
     var surgeryType by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
-    var startTime by remember { mutableStateOf("") }
-    var endTime by remember { mutableStateOf("") }
+
+    // 3 Boxes for Date
+    val todayCal = Calendar.getInstance()
+    var yearStr by remember { mutableStateOf(todayCal.get(Calendar.YEAR).toString()) }
+    var monthStr by remember { mutableStateOf(String.format("%02d", todayCal.get(Calendar.MONTH) + 1)) }
+    var dayStr by remember { mutableStateOf(String.format("%02d", todayCal.get(Calendar.DAY_OF_MONTH))) }
+
+    // 3 Boxes for Time
+    var timeHour by remember { mutableStateOf("10") }
+    var timeMinute by remember { mutableStateOf("00") }
+    var selectedAmPm by remember { mutableStateOf("AM") }
+    var amPmExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -228,40 +240,109 @@ fun ScheduleSurgeryScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                OutlinedTextField(
-                    value = date,
-                    onValueChange = { date = it },
-                    label = { Text("Date (e.g., YYYY-MM-DD)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                // Date Input (3 Boxes)
+                Text("Surgery Date", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = yearStr,
+                        onValueChange = { if (it.length <= 4) yearStr = it.filter { c -> c.isDigit() } },
+                        label = { Text("YYYY") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = monthStr,
+                        onValueChange = { if (it.length <= 2) monthStr = it.filter { c -> c.isDigit() } },
+                        label = { Text("MM") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = dayStr,
+                        onValueChange = { if (it.length <= 2) dayStr = it.filter { c -> c.isDigit() } },
+                        label = { Text("DD") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Time Input (3 Boxes: Hour, Minute, AM/PM)
+                Text("Surgery Time", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
                     OutlinedTextField(
-                        value = startTime,
-                        onValueChange = { startTime = it },
-                        label = { Text("Start Time") },
+                        value = timeHour,
+                        onValueChange = { if (it.length <= 2) timeHour = it.filter { c -> c.isDigit() } },
+                        label = { Text("Hour (1-12)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f)
                     )
                     OutlinedTextField(
-                        value = endTime,
-                        onValueChange = { endTime = it },
-                        label = { Text("End Time") },
+                        value = timeMinute,
+                        onValueChange = { if (it.length <= 2) timeMinute = it.filter { c -> c.isDigit() } },
+                        label = { Text("Minute (00-59)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f)
                     )
+                    ExposedDropdownMenuBox(
+                        expanded = amPmExpanded,
+                        onExpandedChange = { amPmExpanded = it },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        OutlinedTextField(
+                            value = selectedAmPm,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("AM/PM") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = amPmExpanded) },
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = amPmExpanded,
+                            onDismissRequest = { amPmExpanded = false }
+                        ) {
+                            listOf("AM", "PM").forEach { period ->
+                                DropdownMenuItem(
+                                    text = { Text(period) },
+                                    onClick = {
+                                        selectedAmPm = period
+                                        amPmExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
                     onClick = {
+                        val y = yearStr.toIntOrNull()
+                        val m = monthStr.toIntOrNull()
+                        val d = dayStr.toIntOrNull()
+                        val formattedDate = if (y != null && m != null && d != null) String.format("%04d-%02d-%02d", y, m, d) else ""
+
+                        val h = timeHour.toIntOrNull()
+                        val min = timeMinute.toIntOrNull()
+                        val formattedTime = if (h != null && min != null && h in 1..12 && min in 0..59) String.format("%02d:%02d %s", h, min, selectedAmPm) else ""
+
                         viewModel.submitSurgery(
                             selectedPatientId,
                             selectedDoctorId,
                             selectedOtId,
                             surgeryType,
-                            date,
-                            startTime,
-                            endTime
+                            formattedDate,
+                            formattedTime,
+                            ""
                         ) { success, msg ->
                             if (success) {
                                 onSuccess()

@@ -158,17 +158,21 @@ fun AdmittedPatientCard(
 
     NightingaleElevatedCard {
         Text(text = patientName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "Doctor: $doctorName")
-            Text(text = "Room/Bed: $roomNumber")
-            Text(text = "Admitted On: $dateStr")
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Doctor: $doctorName")
+        Text(text = "Room/Bed: $roomNumber")
+        Text(text = "Admitted On: $dateStr")
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
             Button(
                 onClick = onDischarge,
-                modifier = Modifier.align(Alignment.End),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
             ) {
                 Text("Discharge")
             }
         }
+    }
 }

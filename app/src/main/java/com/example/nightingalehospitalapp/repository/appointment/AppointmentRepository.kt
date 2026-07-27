@@ -93,6 +93,32 @@ class AppointmentRepository(
                 .document(appointmentId)
                 .update("status", newStatus.name)
                 .await()
+
+            if (newStatus == AppointmentStatus.CANCELLED) {
+                val apptDoc = db.collection("appointments").document(appointmentId).get().await()
+                val doctorId = apptDoc.getString("doctorId").orEmpty()
+                val date = apptDoc.getString("date").orEmpty()
+                val time = apptDoc.getString("time").orEmpty()
+
+                if (doctorId.isNotBlank() && date.isNotBlank() && time.isNotBlank()) {
+                    val slotsQuery = db.collection("slots")
+                        .whereEqualTo("doctorId", doctorId)
+                        .whereEqualTo("date", date)
+                        .whereEqualTo("time", time)
+                        .get()
+                        .await()
+
+                    for (sDoc in slotsQuery.documents) {
+                        db.collection("slots").document(sDoc.id).update(
+                            mapOf(
+                                "booked" to false,
+                                "patientId" to "",
+                                "patientName" to ""
+                            )
+                        ).await()
+                    }
+                }
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
