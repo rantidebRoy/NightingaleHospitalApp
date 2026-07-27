@@ -4,11 +4,14 @@ import com.example.nightingalehospitalapp.database.FirebaseConfig
 import com.example.nightingalehospitalapp.models.user.User
 import com.google.firebase.auth.FirebaseAuth
 
+import com.example.nightingalehospitalapp.models.user.Patient
+import com.example.nightingalehospitalapp.models.user.Doctor
+
 class AuthRepository {
 
     private val auth = FirebaseAuth.getInstance()
 
-    /* ------------------ REGISTER USER ------------------ */
+    /* ------------------ REGISTER USER (GENERIC) ------------------ */
 
     fun registerUser(
         user: User,
@@ -40,6 +43,107 @@ class AuthRepository {
                     
                     transaction.set(FirebaseConfig.usersRef.document(uid), updatedUser)
                     null // return null for transaction result
+                }.addOnSuccessListener {
+                    onResult(true, null)
+                }.addOnFailureListener {
+                    onResult(false, it.message)
+                }
+            }
+            .addOnFailureListener {
+                onResult(false, it.message)
+            }
+    }
+
+    /* ------------------ REGISTER PATIENT ------------------ */
+
+    fun registerPatient(
+        user: User,
+        patient: Patient,
+        password: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        auth.createUserWithEmailAndPassword(user.email, password)
+            .addOnSuccessListener {
+                val uid = auth.currentUser?.uid ?: return@addOnSuccessListener
+                
+                val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                val counterRef = db.collection("metadata").document("counters")
+                
+                db.runTransaction { transaction ->
+                    val snapshot = transaction.get(counterRef)
+                    val currentCount = snapshot.getLong("patientCounter") ?: 1000L
+                    val nextCount = currentCount + 1
+                    
+                    transaction.set(counterRef, mapOf("patientCounter" to nextCount), com.google.firebase.firestore.SetOptions.merge())
+                    
+                    val displayId = nextCount.toString()
+                    val updatedUser = user.copy(
+                        userId = uid,
+                        role = "PATIENT",
+                        approved = true,
+                        displayId = displayId
+                    )
+                    val updatedPatient = patient.copy(
+                        patientId = uid,
+                        userId = uid,
+                        displayId = displayId
+                    )
+                    
+                    transaction.set(FirebaseConfig.usersRef.document(uid), updatedUser)
+                    transaction.set(FirebaseConfig.patientsRef.document(uid), updatedPatient)
+                    null
+                }.addOnSuccessListener {
+                    onResult(true, null)
+                }.addOnFailureListener {
+                    onResult(false, it.message)
+                }
+            }
+            .addOnFailureListener {
+                onResult(false, it.message)
+            }
+    }
+
+    /* ------------------ REGISTER DOCTOR ------------------ */
+
+    fun registerDoctor(
+        user: User,
+        doctor: Doctor,
+        password: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        auth.createUserWithEmailAndPassword(user.email, password)
+            .addOnSuccessListener {
+                val uid = auth.currentUser?.uid ?: return@addOnSuccessListener
+                
+                val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                val counterRef = db.collection("metadata").document("counters")
+                
+                db.runTransaction { transaction ->
+                    val snapshot = transaction.get(counterRef)
+                    val currentCount = snapshot.getLong("doctorCounter") ?: 1000L
+                    val nextCount = currentCount + 1
+                    
+                    transaction.set(counterRef, mapOf("doctorCounter" to nextCount), com.google.firebase.firestore.SetOptions.merge())
+                    
+                    val displayId = nextCount.toString()
+                    val updatedUser = user.copy(
+                        userId = uid,
+                        role = "DOCTOR",
+                        approved = false,
+                        displayId = displayId
+                    )
+                    val updatedDoctor = doctor.copy(
+                        doctorId = uid,
+                        userId = uid,
+                        displayId = displayId,
+                        name = user.name,
+                        email = user.email,
+                        isApproved = false
+                    )
+                    
+                    transaction.set(FirebaseConfig.usersRef.document(uid), updatedUser)
+                    transaction.set(FirebaseConfig.doctorsRef.document(uid), updatedDoctor)
+                    null
                 }.addOnSuccessListener {
                     onResult(true, null)
                 }.addOnFailureListener {

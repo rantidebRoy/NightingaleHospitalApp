@@ -9,6 +9,11 @@ import com.example.nightingalehospitalapp.repository.user.DoctorRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+data class PendingDoctorWithDetails(
+    val user: User,
+    val doctor: Doctor? = null
+)
+
 class ManageDoctorsViewModel(
     private val doctorRepository: DoctorRepository = DoctorRepository()
 ) : ViewModel() {
@@ -16,8 +21,8 @@ class ManageDoctorsViewModel(
     private val _approvedDoctors = MutableStateFlow<List<Doctor>>(emptyList())
     val approvedDoctors: StateFlow<List<Doctor>> = _approvedDoctors
 
-    private val _pendingDoctors = MutableStateFlow<List<User>>(emptyList())
-    val pendingDoctors: StateFlow<List<User>> = _pendingDoctors
+    private val _pendingDoctors = MutableStateFlow<List<PendingDoctorWithDetails>>(emptyList())
+    val pendingDoctors: StateFlow<List<PendingDoctorWithDetails>> = _pendingDoctors
 
     private val _departments = MutableStateFlow<List<Department>>(emptyList())
     val departments: StateFlow<List<Department>> = _departments
@@ -36,6 +41,16 @@ class ManageDoctorsViewModel(
         var doctorsLoaded = false
         var pendingLoaded = false
 
+        var allDoctorDocs = listOf<Doctor>()
+        var pendingUserDocs = listOf<User>()
+
+        fun updatePendingList() {
+            _pendingDoctors.value = pendingUserDocs.map { user ->
+                val matchingDoc = allDoctorDocs.find { it.userId == user.userId || it.doctorId == user.userId }
+                PendingDoctorWithDetails(user, matchingDoc)
+            }
+        }
+
         fun checkLoading() {
             if (doctorsLoaded && pendingLoaded) {
                 _isLoading.value = false
@@ -46,7 +61,10 @@ class ManageDoctorsViewModel(
             if (error != null) {
                 _errorMessage.value = "Failed to load doctors: ${error.message}"
             } else if (snapshot != null) {
-                _approvedDoctors.value = snapshot.toObjects(Doctor::class.java)
+                val all = snapshot.toObjects(Doctor::class.java)
+                allDoctorDocs = all
+                _approvedDoctors.value = all.filter { it.isApproved }
+                updatePendingList()
             }
             doctorsLoaded = true
             checkLoading()
@@ -59,7 +77,8 @@ class ManageDoctorsViewModel(
                 if (error != null) {
                     _errorMessage.value = "Failed to load pending doctors: ${error.message}"
                 } else if (snapshot != null) {
-                    _pendingDoctors.value = snapshot.toObjects(User::class.java)
+                    pendingUserDocs = snapshot.toObjects(User::class.java)
+                    updatePendingList()
                 }
                 pendingLoaded = true
                 checkLoading()
@@ -75,22 +94,39 @@ class ManageDoctorsViewModel(
     }
 
     fun approveDoctor(user: User) {
-        // Create the doctor in doctorsRef
-        val doctor = Doctor(
-            doctorId = user.userId,
-            userId = user.userId,
-            name = user.name,
-            email = user.email,
-            displayId = user.displayId
+        val doctorRef = FirebaseConfig.doctorsRef.document(user.userId)
+        val userRef = FirebaseConfig.usersRef.document(user.userId)
+
+        val doctorUpdates = mapOf<String, Any>(
+            "isApproved" to true,
+            "approved" to true
         )
-        FirebaseConfig.doctorsRef.document(user.userId).set(doctor).addOnSuccessListener {
-            // Update user to approved
-            FirebaseConfig.usersRef.document(user.userId).update("approved", true)
+
+        doctorRef.update(doctorUpdates).addOnSuccessListener {
+            userRef.update("approved", true)
+        }.addOnFailureListener {
+            doctorRef.get().addOnSuccessListener { snapshot ->
+                if (snapshot.exists()) {
+                    doctorRef.update(doctorUpdates)
+                } else {
+                    val doctor = Doctor(
+                        doctorId = user.userId,
+                        userId = user.userId,
+                        name = user.name,
+                        email = user.email,
+                        displayId = user.displayId,
+                        isApproved = true
+                    )
+                    doctorRef.set(doctor)
+                }
+                userRef.update("approved", true)
+            }
         }
     }
 
     fun rejectDoctor(user: User) {
         FirebaseConfig.usersRef.document(user.userId).delete()
+        FirebaseConfig.doctorsRef.document(user.userId).delete()
     }
 
     fun removeDoctor(doctorId: String) {

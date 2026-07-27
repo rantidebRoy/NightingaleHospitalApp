@@ -1,6 +1,8 @@
 package com.example.nightingalehospitalapp.models.user
 import com.example.nightingalehospitalapp.models.enums.UserRole
 
+import com.google.firebase.firestore.PropertyName
+
 data class Doctor(
     val doctorId: String = "",
     val userId: String = "",
@@ -10,6 +12,6 @@ data class Doctor(
     val qualification: String = "",
     val experienceYears: Int = 0,
     val departmentId: String = "",
-    val isApproved: Boolean = false,
+    @get:PropertyName("isApproved") @set:PropertyName("isApproved") var isApproved: Boolean = false,
     val displayId: String = ""
 )

@@ -36,6 +36,7 @@ import com.example.nightingalehospitalapp.ui.components.NightingaleTextButton
 import com.example.nightingalehospitalapp.ui.components.DoctorCardShimmer
 import com.example.nightingalehospitalapp.ui.components.NightingaleEmptyState
 import androidx.compose.animation.Crossfade
+import com.example.nightingalehospitalapp.viewmodel.admin.doctors.PendingDoctorWithDetails
 
 class ManageDoctorsActivity : ComponentActivity() {
     private val viewModel: ManageDoctorsViewModel by viewModels()
@@ -157,11 +158,12 @@ class ManageDoctorsActivity : ComponentActivity() {
                                             )
                                         }
                                     } else {
-                                        items(pendingDoctors) { user ->
+                                        items(pendingDoctors) { pending ->
                                             PendingDoctorCard(
-                                                user = user,
-                                                onApprove = { viewModel.approveDoctor(user) },
-                                                onReject = { viewModel.rejectDoctor(user) }
+                                                pending = pending,
+                                                departments = departments,
+                                                onApprove = { viewModel.approveDoctor(pending.user) },
+                                                onReject = { viewModel.rejectDoctor(pending.user) }
                                             )
                                         }
                                     }
@@ -322,19 +324,31 @@ fun DoctorProfileCard(
         }
     }
 }
-
 @Composable
 fun PendingDoctorCard(
-    user: User,
+    pending: PendingDoctorWithDetails,
+    departments: List<Department>,
     onApprove: () -> Unit,
     onReject: () -> Unit
 ) {
+    val doctor = pending.doctor
+    val departmentName = departments.find { it.departmentId == doctor?.departmentId }?.name ?: "N/A"
+
     NightingaleElevatedCard {
-        Text(text = user.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Text(text = "Email: ${user.email}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
-        
+        Text(text = pending.user.name.ifEmpty { "Name not provided" }, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        if (pending.user.displayId.isNotEmpty()) {
+            Text(text = "ID: ${pending.user.displayId}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+        }
+        Text(text = "Email: ${pending.user.email}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Department: $departmentName", style = MaterialTheme.typography.bodyMedium)
+        Text(text = "Specialty: ${doctor?.specialization?.ifEmpty { "N/A" } ?: "N/A"}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+        Text(text = "Qualification: ${doctor?.qualification?.ifEmpty { "N/A" } ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
+        Text(text = "Experience: ${doctor?.experienceYears ?: 0} Years", style = MaterialTheme.typography.bodySmall)
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
@@ -342,6 +356,7 @@ fun PendingDoctorCard(
             IconButton(onClick = onApprove) {
                 Icon(Icons.Filled.Check, contentDescription = "Approve", tint = MaterialTheme.colorScheme.primary)
             }
+            Spacer(modifier = Modifier.width(4.dp))
             IconButton(onClick = onReject) {
                 Icon(Icons.Filled.Clear, contentDescription = "Reject", tint = MaterialTheme.colorScheme.error)
             }
