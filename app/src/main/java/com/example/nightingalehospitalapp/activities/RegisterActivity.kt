@@ -1,11 +1,14 @@
 package com.example.nightingalehospitalapp.activities
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,7 +35,16 @@ class RegisterActivity : ComponentActivity() {
             NightingaleHospitalAppTheme {
                 val context = LocalContext.current
                 viewModel = ViewModelProvider(this@RegisterActivity).get(AuthViewModel::class.java)
-                RegisterScreen(viewModel = viewModel, onRegisterSuccess = { finish() })
+                RegisterScreen(
+                    viewModel = viewModel,
+                    onRegisterSuccess = { finish() },
+                    onBackClick = {
+                        val intent = Intent(this@RegisterActivity, MainActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        startActivity(intent)
+                        finish()
+                    }
+                )
             }
         }
     }
@@ -40,7 +52,11 @@ class RegisterActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(viewModel: AuthViewModel, onRegisterSuccess: () -> Unit) {
+fun RegisterScreen(
+    viewModel: AuthViewModel,
+    onRegisterSuccess: () -> Unit,
+    onBackClick: () -> Unit = {}
+) {
     val context = LocalContext.current
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -56,7 +72,12 @@ fun RegisterScreen(viewModel: AuthViewModel, onRegisterSuccess: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Register") }
+                title = { Text("Register") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
