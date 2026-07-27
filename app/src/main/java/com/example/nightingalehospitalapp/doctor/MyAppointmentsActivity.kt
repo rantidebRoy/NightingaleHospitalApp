@@ -127,7 +127,6 @@ private fun AppointmentsContent(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 16.dp)
                     ) {
-                        item { AppointmentsHintBanner() }
                         items(s.appointments, key = { it.appointmentId }) { appt ->
                             AppointmentCard(
                                 appointment = appt,
@@ -150,30 +149,6 @@ private fun AppointmentsContent(
                 selected = null
             }
         )
-    }
-}
-
-@Composable
-private fun AppointmentsHintBanner() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                text = "Tap an appointment to manage it",
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = "Confirm → appears in View Patients   •   Complete → removed from View Patients",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-        }
     }
 }
 
