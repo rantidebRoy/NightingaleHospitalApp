@@ -139,8 +139,12 @@ fun BedList(beds: List<Bed>, onDelete: (String) -> Unit) {
                 NightingaleElevatedCard {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column {
-                            Text("Room: ${bed.roomNumber}", fontWeight = FontWeight.Bold)
+                            Text(
+                                text = if (bed.bedNumber.isNotBlank()) "${bed.bedNumber} (Room ${bed.roomNumber})" else "Room: ${bed.roomNumber}",
+                                fontWeight = FontWeight.Bold
+                            )
                             Text("Ward: ${bed.ward}")
+                            Text("Status: ${bed.status.name}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                         }
                         IconButton(onClick = { onDelete(bed.bedId) }) { Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error) }
                     }
@@ -152,6 +156,7 @@ fun BedList(beds: List<Bed>, onDelete: (String) -> Unit) {
 
 @Composable
 fun AddBedDialog(onDismiss: () -> Unit, onSave: (Bed) -> Unit) {
+    var bedNumber by remember { mutableStateOf("") }
     var room by remember { mutableStateOf("") }
     var ward by remember { mutableStateOf("") }
     AlertDialog(
@@ -159,11 +164,12 @@ fun AddBedDialog(onDismiss: () -> Unit, onSave: (Bed) -> Unit) {
         title = { Text("Add Bed") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                NightingaleTextField(value = bedNumber, onValueChange = { bedNumber = it }, label = "Bed Number / Identifier (e.g. Bed A, Bed 1)")
                 NightingaleTextField(value = room, onValueChange = { room = it }, label = "Room Number")
                 NightingaleTextField(value = ward, onValueChange = { ward = it }, label = "Ward")
             }
         },
-        confirmButton = { NightingalePrimaryButton(onClick = { onSave(Bed(roomNumber = room, ward = ward)) }, text = "Save") },
+        confirmButton = { NightingalePrimaryButton(onClick = { onSave(Bed(bedNumber = bedNumber.trim(), roomNumber = room.trim(), ward = ward.trim())) }, text = "Save") },
         dismissButton = { NightingaleTextButton(onClick = onDismiss, text = "Cancel") }
     )
 }

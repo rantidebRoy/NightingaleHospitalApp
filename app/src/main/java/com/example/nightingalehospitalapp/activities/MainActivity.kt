@@ -23,6 +23,21 @@ import com.google.firebase.auth.FirebaseAuth
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val context = this
+        val auth = FirebaseAuth.getInstance()
+        val currentUser = auth.currentUser
+        val fromOnboarding = intent.getBooleanExtra("from_onboarding", false)
+
+        if (currentUser == null && !fromOnboarding) {
+            val intent = Intent(context, OnboardingActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            startActivity(intent)
+            finish()
+            return
+        }
+
         enableEdgeToEdge()
         setContent {
             NightingaleHospitalAppTheme {
@@ -72,7 +87,7 @@ fun MainScreen(
                         val approved = document.getBoolean("approved")
 
                         if (role == "DOCTOR" && approved == false) {
-                            // Doctor not approved yet, sign out and show login
+                            // Doctor not approved yet, sign out and show login/landing
                             auth.signOut()
                             isLoading = false
                         } else {

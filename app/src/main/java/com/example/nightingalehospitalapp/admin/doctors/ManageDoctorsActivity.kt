@@ -47,6 +47,7 @@ class ManageDoctorsActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             NightingaleHospitalAppTheme {
+                val context = androidx.compose.ui.platform.LocalContext.current
                 val approvedDoctors by viewModel.approvedDoctors.collectAsState()
                 val pendingDoctors by viewModel.pendingDoctors.collectAsState()
                 val departments by viewModel.departments.collectAsState()
@@ -143,6 +144,12 @@ class ManageDoctorsActivity : ComponentActivity() {
                                                 onEdit = {
                                                     editingDoctor = doctor
                                                     showDialog = true
+                                                },
+                                                onManageSchedule = {
+                                                    val intent = android.content.Intent(context, com.example.nightingalehospitalapp.doctor.ManageSlotsActivity::class.java).apply {
+                                                        putExtra(com.example.nightingalehospitalapp.doctor.ManageSlotsActivity.EXTRA_DOCTOR_ID, doctor.doctorId)
+                                                    }
+                                                    context.startActivity(intent)
                                                 },
                                                 onDelete = { viewModel.removeDoctor(doctor.doctorId) }
                                             )
@@ -294,6 +301,7 @@ fun DoctorProfileCard(
     doctor: Doctor,
     departments: List<Department>,
     onEdit: () -> Unit,
+    onManageSchedule: () -> Unit,
     onDelete: () -> Unit
 ) {
     val departmentName = departments.find { it.departmentId == doctor.departmentId }?.name ?: "N/A"
@@ -315,7 +323,7 @@ fun DoctorProfileCard(
             IconButton(onClick = onEdit) {
                 Icon(Icons.Filled.Edit, contentDescription = "Edit Profile", tint = MaterialTheme.colorScheme.primary)
             }
-            IconButton(onClick = { /* Schedule Logic */ }) {
+            IconButton(onClick = onManageSchedule) {
                 Icon(Icons.Filled.DateRange, contentDescription = "Manage Schedule", tint = MaterialTheme.colorScheme.primary)
             }
             IconButton(onClick = onDelete) {

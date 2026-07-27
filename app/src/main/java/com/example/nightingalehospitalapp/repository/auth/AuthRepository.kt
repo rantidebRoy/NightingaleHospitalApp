@@ -28,13 +28,12 @@ class AuthRepository {
                 
                 db.runTransaction { transaction ->
                     val snapshot = transaction.get(counterRef)
-                    val counterField = if (user.role == "PATIENT") "patientCounter" else "doctorCounter"
-                    val currentCount = snapshot.getLong(counterField) ?: 1000L
+                    val currentCount = snapshot.getLong("globalUserCounter") ?: 1000L
                     val nextCount = currentCount + 1
                     
-                    transaction.set(counterRef, mapOf(counterField to nextCount), com.google.firebase.firestore.SetOptions.merge())
+                    transaction.set(counterRef, mapOf("globalUserCounter" to nextCount), com.google.firebase.firestore.SetOptions.merge())
                     
-                    val displayId = nextCount.toString()
+                    val displayId = (if (user.role == "PATIENT") "P" else "D") + nextCount.toString()
                     val updatedUser = user.copy(
                         userId = uid,
                         approved = approvedStatus,
@@ -71,12 +70,12 @@ class AuthRepository {
                 
                 db.runTransaction { transaction ->
                     val snapshot = transaction.get(counterRef)
-                    val currentCount = snapshot.getLong("patientCounter") ?: 1000L
+                    val currentCount = snapshot.getLong("globalUserCounter") ?: 1000L
                     val nextCount = currentCount + 1
                     
-                    transaction.set(counterRef, mapOf("patientCounter" to nextCount), com.google.firebase.firestore.SetOptions.merge())
+                    transaction.set(counterRef, mapOf("globalUserCounter" to nextCount), com.google.firebase.firestore.SetOptions.merge())
                     
-                    val displayId = nextCount.toString()
+                    val displayId = "P$nextCount"
                     val updatedUser = user.copy(
                         userId = uid,
                         role = "PATIENT",
@@ -120,12 +119,12 @@ class AuthRepository {
                 
                 db.runTransaction { transaction ->
                     val snapshot = transaction.get(counterRef)
-                    val currentCount = snapshot.getLong("doctorCounter") ?: 1000L
+                    val currentCount = snapshot.getLong("globalUserCounter") ?: 1000L
                     val nextCount = currentCount + 1
                     
-                    transaction.set(counterRef, mapOf("doctorCounter" to nextCount), com.google.firebase.firestore.SetOptions.merge())
+                    transaction.set(counterRef, mapOf("globalUserCounter" to nextCount), com.google.firebase.firestore.SetOptions.merge())
                     
-                    val displayId = nextCount.toString()
+                    val displayId = "D$nextCount"
                     val updatedUser = user.copy(
                         userId = uid,
                         role = "DOCTOR",

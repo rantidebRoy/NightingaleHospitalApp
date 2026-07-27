@@ -36,4 +36,11 @@ class ManageSlotsViewModel : ViewModel() {
             slotRepository.deleteSlot(slotId)
         }
     }
+
+    fun deleteBookedSlot(slot: Slot, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val result = slotRepository.deleteBookedSlot(slot)
+            onComplete(result.isSuccess)
+        }
+    }
 }

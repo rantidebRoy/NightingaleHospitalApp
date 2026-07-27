@@ -72,6 +72,19 @@ class PrescriptionRepository(
         awaitClose { registration.remove() }
     }
 
+    suspend fun redactPrescription(prescriptionId: String, reason: String): Result<Unit> {
+        return try {
+            val updates = mapOf(
+                "isRedacted" to true,
+                "redactionReason" to reason
+            )
+            FirebaseConfig.prescriptionsRef.document(prescriptionId).update(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     /* ------------------ HELPERS ------------------ */
 
     /**

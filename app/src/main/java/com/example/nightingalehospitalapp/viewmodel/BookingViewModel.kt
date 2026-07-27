@@ -8,10 +8,14 @@ import com.example.nightingalehospitalapp.repository.appointment.AppointmentRepo
 import com.example.nightingalehospitalapp.repository.appointment.SlotRepository
 import com.example.nightingalehospitalapp.repository.user.DoctorRepository
 import com.example.nightingalehospitalapp.repository.user.DoctorWithUser
+import com.example.nightingalehospitalapp.models.user.Patient
+import com.example.nightingalehospitalapp.models.hospital.Department
+import com.example.nightingalehospitalapp.database.FirebaseConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class BookingViewModel : ViewModel() {
 
@@ -21,7 +25,10 @@ class BookingViewModel : ViewModel() {
 
     private val _allDoctors = MutableStateFlow<List<DoctorWithUser>>(emptyList())
     
-    private val _selectedDepartment = MutableStateFlow<String>("All")
+    private val _departments = MutableStateFlow<List<Department>>(emptyList())
+    val departments: StateFlow<List<Department>> = _departments.asStateFlow()
+
+    private val _selectedDepartment = MutableStateFlow<String>("All Departments")
     val selectedDepartment: StateFlow<String> = _selectedDepartment.asStateFlow()
 
     private val _doctors = MutableStateFlow<List<DoctorWithUser>>(emptyList())
@@ -41,18 +48,42 @@ class BookingViewModel : ViewModel() {
         }
     }
 
+    fun fetchDepartments() {
+        viewModelScope.launch {
+            try {
+                val snapshot = FirebaseConfig.departmentsRef.get().await()
+                val list = snapshot.documents.mapNotNull { it.toObject(Department::class.java) }
+                _departments.value = list
+                applyFilter()
+            } catch (_: Exception) {}
+        }
+    }
+
     fun setDepartmentFilter(department: String) {
         _selectedDepartment.value = department
         applyFilter()
     }
 
+    fun getDepartmentNameForDoctor(doctor: com.example.nightingalehospitalapp.models.user.Doctor): String {
+        val deptList = _departments.value
+        val matched = deptList.find { it.departmentId == doctor.departmentId || it.name.equals(doctor.departmentId, ignoreCase = true) }
+        return matched?.name ?: doctor.departmentId.ifBlank { "General" }
+    }
+
     private fun applyFilter() {
         val currentDept = _selectedDepartment.value
-        if (currentDept == "All") {
+        if (currentDept == "All" || currentDept == "All Departments" || currentDept.isBlank()) {
             _doctors.value = _allDoctors.value
         } else {
-            _doctors.value = _allDoctors.value.filter {
-                it.doctor.specialization.equals(currentDept, ignoreCase = true)
+            val deptList = _departments.value
+            val targetDept = deptList.find { it.name.equals(currentDept, ignoreCase = true) }
+            val targetDeptId = targetDept?.departmentId ?: currentDept
+
+            _doctors.value = _allDoctors.value.filter { docWithUser ->
+                val docDeptId = docWithUser.doctor.departmentId
+                docDeptId.equals(targetDeptId, ignoreCase = true) ||
+                docDeptId.equals(currentDept, ignoreCase = true) ||
+                getDepartmentNameForDoctor(docWithUser.doctor).equals(currentDept, ignoreCase = true)
             }
         }
     }
@@ -66,9 +97,9 @@ class BookingViewModel : ViewModel() {
     fun bookAppointment(
         doctorId: String,
         patientId: String,
-        patientName: String, // Ideally fetched from current user
-        patientAge: Int = 30, // Mock for now
-        patientGender: String = "Unknown", // Mock for now
+        patientName: String,
+        patientAge: Int = 0,
+        patientGender: String = "",
         date: String,
         time: String,
         notes: String,
@@ -77,15 +108,38 @@ class BookingViewModel : ViewModel() {
         _bookingState.value = BookingState.Loading
         viewModelScope.launch {
             try {
+                var finalName = patientName
+                var finalAge = patientAge
+                var finalGender = patientGender
+
+                if (patientId.isNotBlank()) {
+                    val uDoc = try {
+                        com.example.nightingalehospitalapp.database.FirebaseConfig.usersRef.document(patientId).get().await()
+                    } catch (_: Exception) { null }
+
+                    val pDoc = try {
+                        com.example.nightingalehospitalapp.database.FirebaseConfig.patientsRef.document(patientId).get().await()
+                    } catch (_: Exception) { null }
+
+                    val fetchedName = uDoc?.getString("name")
+                    if (!fetchedName.isNullOrBlank()) finalName = fetchedName
+
+                    val patientObj = pDoc?.toObject(com.example.nightingalehospitalapp.models.user.Patient::class.java)
+                    if (patientObj != null) {
+                        if (patientObj.age > 0) finalAge = patientObj.age
+                        if (patientObj.gender.isNotBlank()) finalGender = patientObj.gender
+                    }
+                }
+
                 // Mark slot as booked
-                val slotResult = slotRepository.markSlotAsBooked(slotId, patientId, patientName)
+                val slotResult = slotRepository.markSlotAsBooked(slotId, patientId, finalName)
                 if (slotResult.isSuccess) {
                     val appointment = Appointment(
                         doctorId = doctorId,
                         patientId = patientId,
-                        patientName = patientName,
-                        patientAge = patientAge,
-                        patientGender = patientGender,
+                        patientName = finalName,
+                        patientAge = finalAge,
+                        patientGender = finalGender,
                         date = date,
                         time = time,
                         notes = notes

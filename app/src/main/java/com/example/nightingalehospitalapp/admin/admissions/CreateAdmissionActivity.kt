@@ -72,7 +72,7 @@ fun CreateAdmissionScreen(
     var selectedBedId by remember { mutableStateOf("") }
     var bedSearchQuery by remember { mutableStateOf("") }
     var bedExpanded by remember { mutableStateOf(false) }
-    val filteredBeds = beds.filter { it.roomNumber.contains(bedSearchQuery, ignoreCase = true) || it.bedId.contains(bedSearchQuery, ignoreCase = true) }
+    val filteredBeds = beds.filter { it.roomNumber.contains(bedSearchQuery, ignoreCase = true) || it.bedNumber.contains(bedSearchQuery, ignoreCase = true) || it.ward.contains(bedSearchQuery, ignoreCase = true) || it.bedId.contains(bedSearchQuery, ignoreCase = true) }
 
     var reason by remember { mutableStateOf("") }
 
@@ -240,11 +240,12 @@ fun CreateAdmissionScreen(
                             )
                         } else {
                             filteredBeds.forEach { bed ->
+                                val label = if (bed.bedNumber.isNotBlank()) "${bed.bedNumber} (Room ${bed.roomNumber} - ${bed.ward})" else "Room ${bed.roomNumber} - ${bed.ward}"
                                 DropdownMenuItem(
-                                    text = { Text("Room ${bed.roomNumber} - ${bed.ward}") },
+                                    text = { Text(label) },
                                     onClick = {
                                         selectedBedId = bed.bedId
-                                        bedSearchQuery = "Room ${bed.roomNumber} - ${bed.ward}"
+                                        bedSearchQuery = label
                                         bedExpanded = false
                                     }
                                 )

@@ -41,13 +41,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.nightingalehospitalapp.ui.theme.NightingaleHospitalAppTheme
 import com.example.nightingalehospitalapp.viewmodel.HistoryItem
 import com.example.nightingalehospitalapp.viewmodel.PatientHistoryViewModel
 
@@ -61,6 +63,7 @@ class PatientHistoryActivity : ComponentActivity() {
 
         val patientId = intent.getStringExtra(EXTRA_PATIENT_ID).orEmpty()
         val patientName = intent.getStringExtra(EXTRA_PATIENT_NAME) ?: "Patient"
+        val canRedact = intent.getBooleanExtra(EXTRA_CAN_REDACT, false)
 
         viewModel.observe(patientId)
 
@@ -78,7 +81,11 @@ class PatientHistoryActivity : ComponentActivity() {
                             .padding(padding),
                         patientName = patientName,
                         patientId = patientId,
-                        state = state
+                        canRedact = canRedact,
+                        state = state,
+                        onRedactPrescription = { id, reason ->
+                            viewModel.redactPrescription(id, reason)
+                        }
                     )
                 }
             }
@@ -88,6 +95,7 @@ class PatientHistoryActivity : ComponentActivity() {
     companion object {
         const val EXTRA_PATIENT_ID = "extra_patient_id"
         const val EXTRA_PATIENT_NAME = "extra_patient_name"
+        const val EXTRA_CAN_REDACT = "extra_can_redact"
     }
 }
 
@@ -96,7 +104,9 @@ private fun HistoryScreen(
     modifier: Modifier = Modifier,
     patientName: String,
     patientId: String,
-    state: PatientHistoryViewModel.UiState
+    canRedact: Boolean,
+    state: PatientHistoryViewModel.UiState,
+    onRedactPrescription: (String, String) -> Unit
 ) {
     when (state) {
         PatientHistoryViewModel.UiState.Idle,
@@ -138,8 +148,12 @@ private fun HistoryScreen(
                 if (prescriptions.isEmpty()) {
                     item { EmptySection("No prescriptions yet") }
                 } else {
-                    items(prescriptions, key = { "rx-${it.prescriptionId}" }) {
-                        PrescriptionRow(it)
+                    items(prescriptions, key = { "rx-${it.prescriptionId}" }) { rx ->
+                        PrescriptionRow(
+                            row = rx,
+                            canRedact = canRedact,
+                            onRedact = onRedactPrescription
+                        )
                     }
                 }
 
@@ -236,7 +250,14 @@ private fun EmptySection(text: String) {
 }
 
 @Composable
-private fun PrescriptionRow(row: HistoryItem.PrescriptionRow) {
+private fun PrescriptionRow(
+    row: HistoryItem.PrescriptionRow,
+    canRedact: Boolean,
+    onRedact: (prescriptionId: String, reason: String) -> Unit
+) {
+    var showRedactDialog by remember { mutableStateOf(false) }
+    var reasonInput by remember { mutableStateOf("") }
+
     NightingaleElevatedCard(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -245,16 +266,25 @@ private fun PrescriptionRow(row: HistoryItem.PrescriptionRow) {
                 Icon(
                     Icons.Filled.Medication,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = if (row.isRedacted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(Modifier.size(8.dp))
-                Text(
-                    text = "Prescription by ${row.doctorName}",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 15.sp,
-                    modifier = Modifier.weight(1f)
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Prescription by ${row.doctorName}",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp
+                    )
+                    if (row.isRedacted) {
+                        Text(
+                            text = "[REDACTED / CANCELLED]",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
                 Text(
                     text = row.date,
                     fontSize = 12.sp,
@@ -266,7 +296,17 @@ private fun PrescriptionRow(row: HistoryItem.PrescriptionRow) {
                 Text(
                     text = row.diagnosis,
                     fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = if (row.isRedacted) androidx.compose.ui.text.TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough) else androidx.compose.ui.text.TextStyle(),
+                    color = if (row.isRedacted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+                )
+            }
+            if (row.isRedacted && row.redactionReason.isNotBlank()) {
+                Spacer(Modifier.size(4.dp))
+                Text(
+                    text = "Reason: ${row.redactionReason}",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.error
                 )
             }
             if (row.medicines.isNotEmpty()) {
@@ -285,7 +325,51 @@ private fun PrescriptionRow(row: HistoryItem.PrescriptionRow) {
                     )
                 }
             }
+
+            if (!row.isRedacted && canRedact) {
+                Spacer(Modifier.height(8.dp))
+                androidx.compose.material3.TextButton(
+                    onClick = { showRedactDialog = true },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Redact / Cancel", color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+                }
+            }
         }
+    }
+
+    if (showRedactDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showRedactDialog = false },
+            title = { Text("Redact Prescription") },
+            text = {
+                Column {
+                    Text("This will mark the prescription as Redacted / Cancelled. It will remain in medical history for audit purposes.")
+                    Spacer(Modifier.height(12.dp))
+                    androidx.compose.material3.OutlinedTextField(
+                        value = reasonInput,
+                        onValueChange = { reasonInput = it },
+                        label = { Text("Reason for Redaction (optional)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        onRedact(row.prescriptionId, reasonInput.trim().ifBlank { "Redacted by Doctor" })
+                        showRedactDialog = false
+                    }
+                ) {
+                    Text("Redact", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showRedactDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

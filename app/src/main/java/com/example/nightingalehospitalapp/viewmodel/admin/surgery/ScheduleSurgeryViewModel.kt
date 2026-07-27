@@ -86,8 +86,8 @@ class ScheduleSurgeryViewModel : ViewModel() {
         endTime: String,
         onResult: (Boolean, String?) -> Unit
     ) {
-        if (patientId.isEmpty() || doctorId.isEmpty() || otId.isEmpty() || surgeryType.isEmpty() || date.isEmpty() || startTime.isEmpty() || endTime.isEmpty()) {
-            onResult(false, "Please fill all fields")
+        if (patientId.isEmpty() || doctorId.isEmpty() || otId.isEmpty() || surgeryType.isEmpty() || date.isEmpty() || startTime.isEmpty()) {
+            onResult(false, "Please fill all required fields")
             return
         }
 

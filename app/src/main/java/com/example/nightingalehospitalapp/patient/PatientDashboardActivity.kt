@@ -130,7 +130,17 @@ fun PatientDashboardScreen() {
                 DashboardItem("Test Results", Icons.Filled.Info) {
                     context.startActivity(Intent(context, ViewTestResultsActivity::class.java))
                 },
-                DashboardItem("Medical History", Icons.Filled.Favorite),
+                DashboardItem("Medical History", Icons.Filled.Favorite) {
+                    val uid = currentUser?.uid.orEmpty()
+                    if (uid.isNotBlank()) {
+                        val intent = Intent(context, com.example.nightingalehospitalapp.doctor.PatientHistoryActivity::class.java).apply {
+                            putExtra(com.example.nightingalehospitalapp.doctor.PatientHistoryActivity.EXTRA_PATIENT_ID, uid)
+                            putExtra(com.example.nightingalehospitalapp.doctor.PatientHistoryActivity.EXTRA_PATIENT_NAME, userName)
+                            putExtra(com.example.nightingalehospitalapp.doctor.PatientHistoryActivity.EXTRA_CAN_REDACT, false)
+                        }
+                        context.startActivity(intent)
+                    }
+                },
                 DashboardItem("My Appointments", Icons.Filled.DateRange) {
                     context.startActivity(Intent(context, MyAppointmentsActivity::class.java))
                 }

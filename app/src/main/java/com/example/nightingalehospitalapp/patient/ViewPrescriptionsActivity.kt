@@ -110,7 +110,10 @@ fun ViewPrescriptionsScreen(
                     NightingaleEmptyState(
                         title = "No prescriptions yet",
                         message = "Prescriptions written by your doctor will appear here.",
-                        icon = Icons.Filled.Description
+                        icon = Icons.Filled.Description,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
                     )
                 } else {
                     LazyColumn(
@@ -186,11 +189,20 @@ fun PrescriptionCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        text = doctorName,
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (prescription.isRedacted) {
+                        Text(
+                            text = "[REDACTED / CANCELLED]",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    } else {
+                        Text(
+                            text = doctorName,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
                 Icon(
                     imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
@@ -228,6 +240,12 @@ fun PrescriptionCard(
                     DetailRow(label = "Prescription ID", value = prescription.prescriptionId)
                     DetailRow(label = "Date", value = prescription.date)
                     DetailRow(label = "Doctor", value = doctorName)
+                    if (prescription.isRedacted) {
+                        DetailRow(label = "Status", value = "REDACTED / CANCELLED")
+                        if (prescription.redactionReason.isNotBlank()) {
+                            DetailRow(label = "Redaction Reason", value = prescription.redactionReason)
+                        }
+                    }
                     if (prescription.appointmentId.isNotBlank()) {
                         DetailRow(label = "Appointment ID", value = prescription.appointmentId)
                     }
@@ -243,7 +261,8 @@ fun PrescriptionCard(
                     Text(
                         text = prescription.diagnosis.ifBlank { "—" },
                         fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = if (prescription.isRedacted) androidx.compose.ui.text.TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough) else androidx.compose.ui.text.TextStyle(),
+                        color = if (prescription.isRedacted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
