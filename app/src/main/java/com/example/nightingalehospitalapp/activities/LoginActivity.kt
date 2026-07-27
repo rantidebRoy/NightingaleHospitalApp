@@ -7,6 +7,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,7 +37,12 @@ class LoginActivity : ComponentActivity() {
             NightingaleHospitalAppTheme {
                 val context = LocalContext.current
                 viewModel = ViewModelProvider(this@LoginActivity).get(AuthViewModel::class.java)
-                LoginScreen(viewModel = viewModel)
+                LoginScreen(viewModel = viewModel, onBackClick = {
+                    val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    startActivity(intent)
+                    finish()
+                })
             }
         }
     }
@@ -43,7 +50,7 @@ class LoginActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(viewModel: AuthViewModel) {
+fun LoginScreen(viewModel: AuthViewModel, onBackClick: () -> Unit = {}) {
     val context = LocalContext.current
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -53,7 +60,12 @@ fun LoginScreen(viewModel: AuthViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Login") }
+                title = { Text("Login") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
